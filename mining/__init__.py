@@ -68,9 +68,6 @@ def setup(on_startup):
                             settings.COINDAEMON_Reward = 'POS'
                             log.info("Coin detected as POS")
                             break
-                      elif 'stake' not in result and settings.COINDAEMON_Reward == 'POW':
-			 log.info("CoinD looks to be a POW Coin, Config looks to be correct")
-			 break
                     else:
                         settings.COINDAEMON_Reward = 'POW'
                         log.info("Coin detected as POW")
