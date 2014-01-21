@@ -92,10 +92,10 @@ class MiningService(GenericService):
                                             MiningSubscription.on_template,
                                             Interfaces.share_manager.on_network_block)
 
-        Interfaces.template_registry.update_block()
+        defer.waitForDeferred(Interfaces.template_registry.update_block())
         log.info("New litecoind connection changed %s:%s" % (args[0], args[1]))
 
-        result = Interfaces.template_registry.bitcoin_rpc.check_submitblock()
+        result = defer.waitForDeferred(Interfaces.template_registry.bitcoin_rpc.check_submitblock())
         if result == True:
             log.info("Found submitblock")
         elif result == False:
