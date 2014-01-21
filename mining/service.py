@@ -66,11 +66,6 @@ class MiningService(GenericService):
         log.info("New litecoind connection added %s:%s" % (args[0], args[1]))
         return True
 
-    '''@admin
-    def change_litecoind(self, *args):
-        log.info("CHANGING COIN # "+str(args[2])+" "+str(args[5])+" txcomments: "+settings.COINDAEMON_TX)
-        return self._change_litecoind(*args)'''
-
     @admin
     def change_litecoind(self, *args):
         log.info("here");
