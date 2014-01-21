@@ -92,7 +92,6 @@ class BitcoinRPCManager(object):
 	    except:
 		self.next_connection()
 
-    @defer.inlineCallbacks
     def check_submitblock(self):
         while True:
             try:
