@@ -99,7 +99,8 @@ class SimpleCoinbaser(object):
     def change(self, address):
         self.address = address
         self.is_valid = False
-        defer.waitForDeferred(self._validate())
+        (yield self._validate())
+        defer.returnValue(self.is_valid)
 
 
 
