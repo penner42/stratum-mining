@@ -67,8 +67,18 @@ class MiningService(GenericService):
         return True
 
     @admin
+    def returntrue(self):
+        return True
+
+    @admin
+    def returnfalse(self):
+        return False
+
+    @admin
     def change_litecoind(self, *args):
-        return self._change_litecoind(str(args))
+        d = self._change_litecoind(str(args))
+        d.addCallback(self.returntrue)
+        d.addCallback(self.returnfalse)
 
     @admin
     def _change_litecoind(self, *args):
