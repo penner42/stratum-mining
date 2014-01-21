@@ -72,7 +72,7 @@ class MiningService(GenericService):
         if len(args) != 7:
             raise SubmitException("Incorrect number of parameters sent")
 
-        Interfaces._change_litecoind(args)
+        Interfaces.template_registry._change_litecoind(args)
         return True
 
     @admin

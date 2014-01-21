@@ -324,3 +324,37 @@ class TemplateRegistry(object):
             return (header_hex, block_hash_hex, share_diff, None)
         else:
             return (header_hex, scrypt_hash_hex, share_diff, None)
+
+    def _change_litecoind(self, *args):
+        settings.COINDAEMON_Reward = args[5]
+        settings.COINDAEMON_TX = 'yes' if args[6] else 'no'
+        log.info("CHANGING COIN # "+str(args[2])+" "+str(args[5])+" txcomments: "+settings.COINDAEMON_TX)
+
+        from lib.coinbaser import SimpleCoinbaser
+        from lib.template_registry import TemplateRegistry
+        from lib.block_template import BlockTemplate
+        from lib.block_updater import BlockUpdater
+
+        #(host, port, user, password) = args
+        self.bitcoin_rpc.change_connection(str(args[0]), args[1], str(args[2]), str(args[3]))
+
+        (yield self.coinbaser.change(args[4]))
+
+        self.update(BlockTemplate,
+                                            self.coinbaser,
+                                            self.bitcoin_rpc,
+                                            31,
+                                            MiningSubscription.on_template,
+                                            Interfaces.share_manager.on_network_block)
+
+ #       log.info("New litecoind connection changed %s:%s" % (args[0], args[1]))
+
+        result = (yield self.bitcoin_rpc.check_submitblock())
+        if result == True:
+            log.info("Found submitblock")
+        elif result == False:
+            log.info("Did not find submitblock")
+        else:
+            log.info("unknown submitblock result")
+
+        self.update_block()
