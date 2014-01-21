@@ -87,7 +87,7 @@ class MiningService(GenericService):
         Interfaces.template_registry.coinbaser.change(args[4])
 
         #wait for coinbaser to validate. gotta be a better way?
-        while Interfaces.template_registry.coinbaser.is_valid == False
+        while Interfaces.template_registry.coinbaser.is_valid == False:
             continue
 
         Interfaces.template_registry.update(BlockTemplate,
