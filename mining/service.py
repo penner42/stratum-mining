@@ -69,14 +69,13 @@ class MiningService(GenericService):
     @admin
     def change_litecoind(self, *args):
 
-        try:
-            result = (yield bitcoin_rpc.check_submitblock())
-            if result == True:
-                log.info("Found submitblock")
-            elif result == False:
-                log.info("Did not find submitblock")
-            else:
-                log.info("unknown submitblock result")
+        result = (yield bitcoin_rpc.check_submitblock())
+        if result == True:
+            log.info("Found submitblock")
+        elif result == False:
+            log.info("Did not find submitblock")
+        else:
+            log.info("unknown submitblock result")
 
         settings.COINDAEMON_Reward = args[5]
         settings.COINDAEMON_TX = 'yes' if args[6] else 'no'
