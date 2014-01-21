@@ -126,3 +126,38 @@ class Interfaces(object):
     def set_template_registry(cls, registry):
         dbi.set_bitcoinrpc(registry.bitcoin_rpc)
         cls.template_registry = registry
+
+
+    def _change_litecoind(self, *args):
+        settings.COINDAEMON_Reward = args[5]
+        settings.COINDAEMON_TX = 'yes' if args[6] else 'no'
+        log.info("CHANGING COIN # "+str(args[2])+" "+str(args[5])+" txcomments: "+settings.COINDAEMON_TX)
+
+        from lib.coinbaser import SimpleCoinbaser
+        from lib.template_registry import TemplateRegistry
+        from lib.block_template import BlockTemplate
+        from lib.block_updater import BlockUpdater
+
+        #(host, port, user, password) = args
+        self.template_registry.bitcoin_rpc.change_connection(str(args[0]), args[1], str(args[2]), str(args[3]))
+
+        (yield self.template_registry.coinbaser.change(args[4]))
+
+        self.template_registry.update(BlockTemplate,
+                                            self.template_registry.coinbaser,
+                                            self.template_registry.bitcoin_rpc,
+                                            31,
+                                            MiningSubscription.on_template,
+                                            self.share_manager.on_network_block)
+
+ #       log.info("New litecoind connection changed %s:%s" % (args[0], args[1]))
+
+        result = (yield .template_registry.bitcoin_rpc.check_submitblock()))
+        if result == True:
+            log.info("Found submitblock")
+        elif result == False:
+            log.info("Did not find submitblock")
+        else:
+            log.info("unknown submitblock result")
+
+        self.template_registry.update_block()

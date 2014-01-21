@@ -68,47 +68,11 @@ class MiningService(GenericService):
 
     @admin
     def change_litecoind(self, *args):
-        settings.COINDAEMON_Reward = args[5]
-        settings.COINDAEMON_TX = 'yes' if args[6] else 'no'
-        log.info("CHANGING COIN # "+str(args[2])+" "+str(args[5])+" txcomments: "+settings.COINDAEMON_TX)
-
-        ''' Function to add a litecoind instance live '''
-        from lib.coinbaser import SimpleCoinbaser
-        from lib.template_registry import TemplateRegistry
-        from lib.block_template import BlockTemplate
-        from lib.block_updater import BlockUpdater
 
         if len(args) != 7:
             raise SubmitException("Incorrect number of parameters sent")
 
-        #(host, port, user, password) = args
-        Interfaces.template_registry.bitcoin_rpc.change_connection(str(args[0]), args[1], str(args[2]), str(args[3]))
-
-        d = Interfaces.template_registry.coinbaser.change(args[4])
-        d.addCallback(self._change_litecoind)
-        return True
-
-    @admin
-    def _change_litecoind(self):
-        Interfaces.template_registry.update(BlockTemplate,
-                                            Interfaces.template_registry.coinbaser,
-                                            Interfaces.template_registry.bitcoin_rpc,
-                                            31,
-                                            MiningSubscription.on_template,
-                                            Interfaces.share_manager.on_network_block)
-
- #       log.info("New litecoind connection changed %s:%s" % (args[0], args[1]))
-
-        result = defer.waitForDeferred(Interfaces.template_registry.bitcoin_rpc.check_submitblock())
-        if result == True:
-            log.info("Found submitblock")
-        elif result == False:
-            log.info("Did not find submitblock")
-        else:
-            log.info("unknown submitblock result")
-
-        Interfaces.template_registry.update_block()
-
+        Interfaces._change_litecoind(args)
         return True
 
     @admin
