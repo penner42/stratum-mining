@@ -86,6 +86,7 @@ class MiningService(GenericService):
 
         d = Interfaces.template_registry.coinbaser.change(args[4])
         d.addCallback(self._change_litecoind)
+        return True
 
     @admin
     def _change_litecoind(self):
