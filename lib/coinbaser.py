@@ -96,6 +96,7 @@ class SimpleCoinbaser(object):
     def get_coinbase_data(self):
         return ''
 
+    @defer.inlineCallbacks
     def change(self, address):
         self.address = address
         self.is_valid = False
