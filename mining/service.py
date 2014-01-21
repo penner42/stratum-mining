@@ -83,8 +83,13 @@ class MiningService(GenericService):
 
         #(host, port, user, password) = args
         Interfaces.template_registry.bitcoin_rpc.change_connection(str(args[0]), args[1], str(args[2]), str(args[3]))
-        resp = defer.waitForDeferred(Interfaces.template_registry.coinbaser.change(args[4]))
-        resp.getResult();
+
+        Interfaces.template_registry.coinbaser.change(args[4])
+
+        #wait for coinbaser to validate. gotta be a better way?
+        while Interfaces.template_registry.coinbaser.is_valid == False
+            continue
+
         Interfaces.template_registry.update(BlockTemplate,
                                             Interfaces.template_registry.coinbaser,
                                             Interfaces.template_registry.bitcoin_rpc,
