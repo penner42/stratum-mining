@@ -84,12 +84,11 @@ class MiningService(GenericService):
         #(host, port, user, password) = args
         Interfaces.template_registry.bitcoin_rpc.change_connection(str(args[0]), args[1], str(args[2]), str(args[3]))
 
-        Interfaces.template_registry.coinbaser.change(args[4])
+        d = Interfaces.template_registry.coinbaser.change(args[4])
+        d.addCallback(self._change_litecoind)
 
-        #wait for coinbaser to validate. gotta be a better way?
-        while Interfaces.template_registry.coinbaser.is_valid == False:
-            continue
-
+    @admin
+    def _change_litecoind(self):
         Interfaces.template_registry.update(BlockTemplate,
                                             Interfaces.template_registry.coinbaser,
                                             Interfaces.template_registry.bitcoin_rpc,
@@ -97,7 +96,7 @@ class MiningService(GenericService):
                                             MiningSubscription.on_template,
                                             Interfaces.share_manager.on_network_block)
 
-        log.info("New litecoind connection changed %s:%s" % (args[0], args[1]))
+ #       log.info("New litecoind connection changed %s:%s" % (args[0], args[1]))
 
         result = defer.waitForDeferred(Interfaces.template_registry.bitcoin_rpc.check_submitblock())
         if result == True:
