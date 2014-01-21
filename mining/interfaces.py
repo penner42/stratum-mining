@@ -152,7 +152,7 @@ class Interfaces(object):
 
  #       log.info("New litecoind connection changed %s:%s" % (args[0], args[1]))
 
-        result = (yield .template_registry.bitcoin_rpc.check_submitblock()))
+        result = (yield .template_registry.bitcoin_rpc.check_submitblock())
         if result == True:
             log.info("Found submitblock")
         elif result == False:
