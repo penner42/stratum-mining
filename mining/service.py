@@ -66,23 +66,14 @@ class MiningService(GenericService):
         log.info("New litecoind connection added %s:%s" % (args[0], args[1]))
         return True
 
-    @admin
-    def returntrue(self):
-        return True
-
-    @admin
-    def returnfalse(self):
-        return False
+    '''@admin
+    def change_litecoind(self, *args):
+        log.info("CHANGING COIN # "+str(args[2])+" "+str(args[5])+" txcomments: "+settings.COINDAEMON_TX)
+        return self._change_litecoind(*args)'''
 
     @admin
     def change_litecoind(self, *args):
-        d = self._change_litecoind(str(args))
-        d.addCallback(self.returntrue)
-        d.addCallback(self.returnfalse)
-
-    @admin
-    def _change_litecoind(self, *args):
-
+        log.info("here");
         settings.COINDAEMON_Reward = args[5]
         settings.COINDAEMON_TX = 'yes' if args[6] else 'no'
         log.info("CHANGING COIN # "+str(args[2])+" "+str(args[5])+" txcomments: "+settings.COINDAEMON_TX)
@@ -109,7 +100,7 @@ class MiningService(GenericService):
         Interfaces.template_registry.update_block()
         log.info("New litecoind connection changed %s:%s" % (args[0], args[1]))
 
-        result = (yield bitcoin_rpc.check_submitblock())
+        result = Interfaces.template_registry.bitcoin_rpc.check_submitblock()
         if result == True:
             log.info("Found submitblock")
         elif result == False:
@@ -117,7 +108,7 @@ class MiningService(GenericService):
         else:
             log.info("unknown submitblock result")
 
-        defer.returnValue(True)
+        return True
 
     @admin
     def refresh_config(self):
