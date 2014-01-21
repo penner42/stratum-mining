@@ -84,7 +84,7 @@ class MiningService(GenericService):
 
         #(host, port, user, password) = args
         Interfaces.template_registry.bitcoin_rpc.change_connection(str(args[0]), args[1], str(args[2]), str(args[3]))
-        defer.waitForDeferred(Interfaces.template_registry.coinbaser.change(args[4]))
+        Interfaces.template_registry.coinbaser.change(args[4])
         Interfaces.template_registry.update(BlockTemplate,
                                             Interfaces.template_registry.coinbaser,
                                             Interfaces.template_registry.bitcoin_rpc,
