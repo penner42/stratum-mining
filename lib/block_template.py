@@ -24,7 +24,7 @@ class BlockTemplate(halfnode.CBlock):
     Let's iterate extranonce1, extranonce2, ntime and nonce
     to find out valid coin block!'''
     
-    coinbase_transaction_class = CoinbaseTransactionPOW
+    coinbase_transaction_class = CoinbaseTransaction
     
     def __init__(self, timestamper, coinbaser, job_id):
    	log.debug("Got To  Block_template.py")
@@ -57,7 +57,7 @@ class BlockTemplate(halfnode.CBlock):
         txhashes = [None] + [ util.ser_uint256(int(t['hash'], 16)) for t in data['transactions'] ]
         mt = merkletree.MerkleTree(txhashes)
 	if settings.COINDAEMON_Reward == 'POW':
-           coinbase = CoinbaseTransactionPOW(self.timestamper, self.coinbaser, data['coinbasevalue'], data['coinbaseaux']['flags'], data['height'], 
+           coinbase = CoinbaseTransactionPOW(self.timestamper, self.coinbaser, data['coinbasevalue'], data['coinbaseaux']['flags'], data['height'],
 			settings.COINBASE_EXTRAS)
 	else:
 	    coinbase = CoinbaseTransactionPOS(self.timestamper, self.coinbaser, data['coinbasevalue'], data['coinbaseaux']['flags'], data['height'],

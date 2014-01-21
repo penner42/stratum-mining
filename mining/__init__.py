@@ -40,21 +40,41 @@ def setup(on_startup):
     log.info("Connecting to litecoind...")
     while True:
         try:
+            result = (yield bitcoin_rpc.check_submitblock())
+            if result == True:
+                log.info("Found submitblock")
+            elif result == False:
+                log.info("Did not find submitblock")
+            else:
+                log.info("unknown submitblock result")
+
+        except ConnectionRefusedError, e:
+            log.error("Connection refused while trying to connect to the coind (are your COIND_* settings correct?)")
+            reactor.stop()
+            break
+
+        except Exception, e:
+            log.debug(str(e))
+
+
+        try:
             result = (yield bitcoin_rpc.getblocktemplate())
             if isinstance(result, dict):
                 # litecoind implements version 1 of getblocktemplate
                 if result['version'] >= 1:
-		   result = (yield bitcoin_rpc.getinfo())
-                   if isinstance(result,dict):
-                      if 'stake' in result and settings.COINDAEMON_Reward == 'POS':
-			 log.info("CoinD looks to be a POS Coin, Config for POS looks correct")
-                         break
+                    result = (yield bitcoin_rpc.getdifficulty())
+                    if isinstance(result,dict):
+                        if 'proof-of-stake' in result:
+                            settings.COINDAEMON_Reward = 'POS'
+                            log.info("Coin detected as POS")
+                            break
                       elif 'stake' not in result and settings.COINDAEMON_Reward == 'POW':
 			 log.info("CoinD looks to be a POW Coin, Config looks to be correct")
 			 break
-                      else:
-                          log.error("Wrong Algo Selected, Switch to appropriate POS/POW in config.py!")
-                          reactor.stop()
+                    else:
+                        settings.COINDAEMON_Reward = 'POW'
+                        log.info("Coin detected as POW")
+                        break
                 else:
                     log.error("Block Version mismatch: %s" % result['version'])
 
