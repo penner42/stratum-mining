@@ -68,7 +68,7 @@ class MiningService(GenericService):
 
     @admin
     def change_litecoind(self, *args):
-        return _change_litecoind(args)
+        return self._change_litecoind(args)
 
     @admin
     def _change_litecoind(self, *args):
