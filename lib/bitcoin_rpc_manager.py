@@ -37,6 +37,9 @@ class BitcoinRPCManager(object):
         # TODO: Some string sanity checks
         self.conns[len(self.conns)] = BitcoinRPC(host, port, user, password)
 
+    def change_connection(self, host, port, user, password):
+        self.conns[0] = BitcoinRPC(host, port, user, password)
+
     def next_connection(self):
 	time.sleep(1)
 	if len(self.conns) <= 1:

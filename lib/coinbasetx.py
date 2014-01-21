@@ -18,7 +18,7 @@ class CoinbaseTransactionPOW(halfnode.CTransaction):
 
     def __init__(self, timestamper, coinbaser, value, flags, height, data):
         super(CoinbaseTransactionPOW, self).__init__()
-        log.debug("Got to CoinBaseTX")
+      	log.debug("Got to CoinBaseTX")  
         #self.extranonce = 0
         
         if len(self.extranonce_placeholder) != self.extranonce_size:
@@ -113,7 +113,7 @@ class CoinbaseTransaction(halfnode.CTransaction):
 
     def __init__(self, timestamper, coinbaser, value, flags, height, data, ntime):
         super(CoinbaseTransaction, self).__init__()
-        log.debug("Got to CoinBaseTX")
+	log.debug("Got to CoinBaseTX")        
         #self.extranonce = 0
         
         if len(self.extranonce_placeholder) != self.extranonce_size:

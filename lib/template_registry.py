@@ -59,6 +59,28 @@ class TemplateRegistry(object):
         
         # Create first block template on startup
         self.update_block()
+
+    def update(self, block_template_class, coinbaser, bitcoin_rpc, instance_id,
+               on_template_callback, on_block_callback):
+        self.prevhashes = {}
+        self.jobs = weakref.WeakValueDictionary()
+
+        self.extranonce_counter = ExtranonceCounter(instance_id)
+        self.extranonce2_size = block_template_class.coinbase_transaction_class.extranonce_size \
+                                - self.extranonce_counter.get_size()
+
+        self.coinbaser = coinbaser
+        self.block_template_class = block_template_class
+        self.bitcoin_rpc = bitcoin_rpc
+        self.on_block_callback = on_block_callback
+        self.on_template_callback = on_template_callback
+
+        self.last_block = None
+        self.update_in_progress = False
+        self.last_update = None
+
+        # Create first block template on startup
+        self.update_block()
         
     def get_new_extranonce1(self):
         '''Generates unique extranonce1 (e.g. for newly
