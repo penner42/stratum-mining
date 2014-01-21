@@ -127,8 +127,8 @@ class Interfaces(object):
         dbi.set_bitcoinrpc(registry.bitcoin_rpc)
         cls.template_registry = registry
 
-
-    def _change_litecoind(self, *args):
+    @classmethod
+    def _change_litecoind(cls, *args):
         settings.COINDAEMON_Reward = args[5]
         settings.COINDAEMON_TX = 'yes' if args[6] else 'no'
         log.info("CHANGING COIN # "+str(args[2])+" "+str(args[5])+" txcomments: "+settings.COINDAEMON_TX)
