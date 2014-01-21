@@ -68,6 +68,10 @@ class MiningService(GenericService):
 
     @admin
     def change_litecoind(self, *args):
+        return _change_litecoind(args)
+
+    @admin
+    def _change_litecoind(self, *args):
 
         result = (yield bitcoin_rpc.check_submitblock())
         if result == True:
