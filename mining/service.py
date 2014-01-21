@@ -68,7 +68,6 @@ class MiningService(GenericService):
 
     @admin
     def change_litecoind(self, *args):
-        log.info("here");
         settings.COINDAEMON_Reward = args[5]
         settings.COINDAEMON_TX = 'yes' if args[6] else 'no'
         log.info("CHANGING COIN # "+str(args[2])+" "+str(args[5])+" txcomments: "+settings.COINDAEMON_TX)
@@ -92,17 +91,17 @@ class MiningService(GenericService):
                                             MiningSubscription.on_template,
                                             Interfaces.share_manager.on_network_block)
 
-        Interfaces.template_registry.update_block()
-
         log.info("New litecoind connection changed %s:%s" % (args[0], args[1]))
 
-        result = Interfaces.template_registry.bitcoin_rpc.check_submitblock()
+        result = defer.waitForDeferred(Interfaces.template_registry.bitcoin_rpc.check_submitblock())
         if result == True:
             log.info("Found submitblock")
         elif result == False:
             log.info("Did not find submitblock")
         else:
             log.info("unknown submitblock result")
+
+        Interfaces.template_registry.update_block()
 
         return True
 
