@@ -126,5 +126,6 @@ def setup(on_startup):
     prune_thr.start()
     
     log.info("MINING SERVICE IS READY")
+
     on_startup.callback(True)
 
