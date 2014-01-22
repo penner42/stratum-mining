@@ -92,7 +92,7 @@ class MiningService(GenericService):
                                             MiningSubscription.on_template,
                                             Interfaces.share_manager.on_network_block)
 
-        result = bitcoin_rpc.check_submitblock()
+        result = Interfaces.template_registry.bitcoin_rpc.check_submitblock()
         if result == True:
             log.info("Found submitblock")
         elif result == False:
