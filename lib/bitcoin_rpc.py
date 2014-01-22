@@ -80,6 +80,7 @@ class BitcoinRPC(object):
                         log.exception("Try Enabling TX Messages in config.py!")
                         raise
                     else:
+                        log.debug("Attempt %s failed. Retrying.", str(attempts))
                         continue
             elif self.has_submitblock == False:
                 try:
@@ -93,6 +94,7 @@ class BitcoinRPC(object):
                         log.exception("Try Enabling TX Messages in config.py!")
                         raise
                     else:
+                        log.debug("Attempt %s failed. Retrying.", str(attempts))
                         continue
             else:  # self.has_submitblock = None; unable to detect submitblock, try both
                 try:
@@ -112,6 +114,7 @@ class BitcoinRPC(object):
                             log.exception("Try Enabling TX Messages in config.py!")
                             raise
                         else:
+                            log.debug("Attempt %s failed. Retrying.", str(attempts))
                             continue
 
         if json.loads(resp)['result'] == None:
