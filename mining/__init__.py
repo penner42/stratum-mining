@@ -128,7 +128,40 @@ def setup(on_startup):
     log.info("MINING SERVICE IS READY")
     on_startup.callback(True)
 
+@defer.inlineCallbacks
+def changeCoin(host, port, user, password, address, powpos, txcomments):
+    settings.COINDAEMON_Reward = powpos
+    settings.COINDAEMON_TX = 'yes' if txcomments else 'no'
+    log.info("CHANGING COIN # "+str(user)+" "+str(powpos)+" txcomments: "+settings.COINDAEMON_TX)
 
+    ''' Function to add a litecoind instance live '''
+    from lib.coinbaser import SimpleCoinbaser
+    from lib.template_registry import TemplateRegistry
+    from lib.block_template import BlockTemplate
+    from lib.block_updater import BlockUpdater
 
+    if len(args) != 7:
+        raise SubmitException("Incorrect number of parameters sent")
 
+        #(host, port, user, password) = args
+        Interfaces.template_registry.bitcoin_rpc.change_connection(str(host), post, str(user), str(password))
 
+        Interfaces.template_registry.coinbaser.change(address);
+        (yield Interfaces.template_registry.coinbaser.on_load)
+
+        Interfaces.template_registry.update(BlockTemplate,
+                                            Interfaces.template_registry.coinbaser,
+                                            Interfaces.template_registry.bitcoin_rpc,
+                                            31,
+                                            MiningSubscription.on_template,
+                                            Interfaces.share_manager.on_network_block)
+
+        result = (yield Interfaces.template_registry.bitcoin_rpc.check_submitblock())
+        if result == True:
+            log.info("Found submitblock")
+        elif result == False:
+            log.info("Did not find submitblock")
+        else:
+            log.info("unknown submitblock result")
+        Interfaces.template_registry.update_block()
+        log.info("New litecoind connection changed %s:%s" % (host, port))
