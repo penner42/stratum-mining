@@ -126,3 +126,42 @@ class Interfaces(object):
     def set_template_registry(cls, registry):
         dbi.set_bitcoinrpc(registry.bitcoin_rpc)
         cls.template_registry = registry
+
+    @classmethod
+    @defer.inlineCallbacks
+    def changeCoin(cls, host, port, user, password, address, powpos, txcomments):
+        settings.COINDAEMON_Reward = powpos
+        settings.COINDAEMON_TX = 'yes' if txcomments else 'no'
+        log.info("CHANGING COIN # "+str(user)+" "+str(powpos)+" txcomments: "+settings.COINDAEMON_TX)
+        
+        ''' Function to add a litecoind instance live '''
+        from lib.coinbaser import SimpleCoinbaser
+        from lib.template_registry import TemplateRegistry
+        from lib.block_template import BlockTemplate
+        from lib.block_updater import BlockUpdater
+        from subscription import MiningSubscription
+        
+        #(host, port, user, password) = args
+        cls.template_registry.bitcoin_rpc.change_connection(str(host), port, str(user), str(password))
+        
+        cls.template_registry.coinbaser.change(address);
+        (yield cls.template_registry.coinbaser.on_load)
+        
+        cls.template_registry.update(BlockTemplate,
+                                            cls.template_registry.coinbaser,
+                                            cls.template_registry.bitcoin_rpc,
+                                            31,
+                                            MiningSubscription.on_template,
+                                            cls.share_manager.on_network_block)
+        
+        result = (yield cls.template_registry.bitcoin_rpc.check_submitblock())
+        if result == True:
+            log.info("Found submitblock")
+        elif result == False:
+            log.info("Did not find submitblock")
+        else:
+            log.info("unknown submitblock result")
+            
+        cls.template_registry.update_block()
+        log.info("New litecoind connection changed %s:%s" % (host, port))
+            
