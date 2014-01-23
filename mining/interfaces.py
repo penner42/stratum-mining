@@ -144,7 +144,7 @@ class Interfaces(object):
         #(host, port, user, password) = args
         cls.template_registry.bitcoin_rpc.change_connection(str(host), port, str(user), str(password))
 
-        result = (yield bitcoin_rpc.check_submitblock())
+        result = (yield cls.template_registry.bitcoin_rpc.check_submitblock())
         if result == True:
             log.info("Found submitblock")
         elif result == False:
