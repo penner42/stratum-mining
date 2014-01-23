@@ -130,9 +130,9 @@ class Interfaces(object):
     @classmethod
     @defer.inlineCallbacks
     def changeCoin(cls, host, port, user, password, address, powpos, txcomments):
-        settings.COINDAEMON_Reward = powpos
+
         settings.COINDAEMON_TX = 'yes' if txcomments else 'no'
-        log.info("CHANGING COIN # "+str(user)+" "+str(powpos)+" txcomments: "+settings.COINDAEMON_TX)
+        log.info("CHANGING COIN # "+str(user)+" txcomments: "+settings.COINDAEMON_TX)
         
         ''' Function to add a litecoind instance live '''
         from lib.coinbaser import SimpleCoinbaser
@@ -143,8 +143,16 @@ class Interfaces(object):
         
         #(host, port, user, password) = args
         cls.template_registry.bitcoin_rpc.change_connection(str(host), port, str(user), str(password))
-        
-        cls.template_registry.coinbaser.change(address);
+
+        result = (yield bitcoin_rpc.check_submitblock())
+        if result == True:
+            log.info("Found submitblock")
+        elif result == False:
+            log.info("Did not find submitblock")
+        else:
+            log.info("unknown submitblock result")
+
+        cls.template_registry.coinbaser.change(address)
         (yield cls.template_registry.coinbaser.on_load)
         
         cls.template_registry.update(BlockTemplate,
