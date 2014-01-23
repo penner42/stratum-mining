@@ -145,11 +145,11 @@ class Interfaces(object):
         cls.template_registry.bitcoin_rpc.change_connection(str(host), port, str(user), str(password))
 
         try:
-            result = (yield bitcoin_rpc.getblocktemplate())
+            result = (yield cls.template_registry.bitcoin_rpc.getblocktemplate())
             if isinstance(result, dict):
                 # litecoind implements version 1 of getblocktemplate
                 if result['version'] >= 1:
-                    result = (yield bitcoin_rpc.getdifficulty())
+                    result = (yield cls.template_registry.bitcoin_rpc.getdifficulty())
                     if isinstance(result,dict):
                         if 'proof-of-stake' in result:
                             settings.COINDAEMON_Reward = 'POS'
