@@ -144,13 +144,23 @@ class Interfaces(object):
         #(host, port, user, password) = args
         cls.template_registry.bitcoin_rpc.change_connection(str(host), port, str(user), str(password))
 
-        result = (yield cls.template_registry.bitcoin_rpc.check_submitblock())
-        if result == True:
-            log.info("Found submitblock")
-        elif result == False:
-            log.info("Did not find submitblock")
-        else:
-            log.info("unknown submitblock result")
+        try:
+            result = (yield bitcoin_rpc.getblocktemplate())
+            if isinstance(result, dict):
+                # litecoind implements version 1 of getblocktemplate
+                if result['version'] >= 1:
+                    result = (yield bitcoin_rpc.getdifficulty())
+                    if isinstance(result,dict):
+                        if 'proof-of-stake' in result:
+                            settings.COINDAEMON_Reward = 'POS'
+                            log.info("Coin detected as POS")
+                            break
+                    else:
+                        settings.COINDAEMON_Reward = 'POW'
+                        log.info("Coin detected as POW")
+                        break
+                else:
+                    log.error("Block Version mismatch: %s" % result['version'])
 
         cls.template_registry.coinbaser.change(address)
         (yield cls.template_registry.coinbaser.on_load)
