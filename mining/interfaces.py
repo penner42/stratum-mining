@@ -144,22 +144,21 @@ class Interfaces(object):
         #(host, port, user, password) = args
         cls.template_registry.bitcoin_rpc.change_connection(str(host), port, str(user), str(password))
 
-        try:
-            result = (yield cls.template_registry.bitcoin_rpc.getblocktemplate())
-            if isinstance(result, dict):
-                # litecoind implements version 1 of getblocktemplate
-                if result['version'] >= 1:
-                    result = (yield cls.template_registry.bitcoin_rpc.getdifficulty())
-                    if isinstance(result,dict):
-                        if 'proof-of-stake' in result:
-                            settings.COINDAEMON_Reward = 'POS'
-                            log.info("Coin detected as POS")
-                            break
-                    else:
-                        settings.COINDAEMON_Reward = 'POW'
-                        log.info("Coin detected as POW")
+        result = (yield cls.template_registry.bitcoin_rpc.getblocktemplate())
+        if isinstance(result, dict):
+            # litecoind implements version 1 of getblocktemplate
+            if result['version'] >= 1:
+                result = (yield cls.template_registry.bitcoin_rpc.getdifficulty())
+                if isinstance(result,dict):
+                    if 'proof-of-stake' in result:
+                        settings.COINDAEMON_Reward = 'POS'
+                        log.info("Coin detected as POS")
                         break
                 else:
+                    settings.COINDAEMON_Reward = 'POW'
+                    log.info("Coin detected as POW")
+                    break
+            else:
                     log.error("Block Version mismatch: %s" % result['version'])
 
         cls.template_registry.coinbaser.change(address)
