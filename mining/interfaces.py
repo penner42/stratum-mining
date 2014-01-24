@@ -177,6 +177,6 @@ class Interfaces(object):
         else:
             log.info("unknown submitblock result")
             
-        cls.template_registry.update_block()
+        (yield cls.template_registry.update_block())
         log.info("New litecoind connection changed %s:%s" % (host, port))
             
