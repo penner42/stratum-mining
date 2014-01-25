@@ -52,6 +52,7 @@ LOGDIR = 'log/'
 # Main application log file.
 LOGFILE = None      # eg. 'stratum.log'
 LOGLEVEL = 'DEBUG'
+IPLOGFILE = 'failedworkers.log'
 # Logging Rotation can be enabled with the following settings
 # It if not enabled here, you can set up logrotate to rotate the files. 
 # For built in log rotation set LOG_ROTATION = True and configrue the variables
