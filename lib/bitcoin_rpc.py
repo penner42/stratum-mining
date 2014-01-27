@@ -14,7 +14,7 @@ log = lib.logger.get_logger('bitcoin_rpc')
 class BitcoinRPC(object):
     
     def __init__(self, host, port, username, password):
-	log.debug("Got to Bitcoin RPC")
+        log.debug("Got to Bitcoin RPC")
         self.bitcoin_url = 'http://%s:%d' % (host, port)
         self.credentials = base64.b64encode("%s:%s" % (username, password))
         self.headers = {
@@ -132,8 +132,16 @@ class BitcoinRPC(object):
     
     @defer.inlineCallbacks
     def getblocktemplate(self):
-        resp = (yield self._call('getblocktemplate', [{}]))
-        defer.returnValue(json.loads(resp)['result'])
+        try:
+            resp = (yield self._call('getblocktemplate', [{}]))
+            defer.returnValue(json.loads(resp)['result'])
+        # if internal server error try getblocktemplate without empty {} # ppcoin
+        except Exception as e:
+            if (str(e) == "500 Internal Server Error"):
+                resp = (yield self._call('getblocktemplate', []))
+                defer.returnValue(json.loads(resp)['result'])
+            else:
+                raise
                                                   
     @defer.inlineCallbacks
     def prevhash(self):
@@ -147,8 +155,8 @@ class BitcoinRPC(object):
     @defer.inlineCallbacks
     def validateaddress(self, address):
         resp = (yield self._call('validateaddress', [address,]))
-	defer.returnValue(json.loads(resp)['result'])
-	
+        defer.returnValue(json.loads(resp)['result'])
+
     @defer.inlineCallbacks
     def getdifficulty(self):
         resp = (yield self._call('getdifficulty', []))
@@ -208,3 +216,6 @@ class BitcoinRPC(object):
         except Exception as e:
             # cannot get blockhash from height; block was created, so return true
             defer.returnValue(True)
+        else:
+            log.info("Cannot find block for %s" % hash_hex)
+            defer.returnValue(False)
