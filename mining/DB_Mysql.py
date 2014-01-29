@@ -130,7 +130,8 @@ class DB_Mysql():
             self.execute(
                 """
                 UPDATE `shares`
-                SET `upstream_result` = %(result)s
+                SET `upstream_result` = %(result)s,
+                `is_block_solution` = 'Y'
                 WHERE `solution` = %(solution)s
                 AND `id` = %(id)s
                 LIMIT 1
@@ -148,11 +149,11 @@ class DB_Mysql():
                 """
                 INSERT INTO `shares`
                 (time, rem_host, username, our_result, 
-                  upstream_result, reason, solution)
+                  upstream_result, reason, solution. is_block_solution)
                 VALUES 
                 (FROM_UNIXTIME(%(time)s), %(host)s, 
                   %(uname)s, 
-                  %(lres)s, %(result)s, %(reason)s, %(solution)s)
+                  %(lres)s, %(result)s, %(reason)s, %(solution)s), 'Y'
                 """,
                 {
                     "time": data[4],
