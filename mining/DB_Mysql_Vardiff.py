@@ -83,7 +83,7 @@ class DB_Mysql_Vardiff(DB_Mysql.DB_Mysql):
 
         shareid = self.dbc.fetchone()
 
-        if shareid[0] > 0:
+        if shareid and shareid[0] > 0:
             # Note: difficulty = -1 here
             self.execute(
                 """
