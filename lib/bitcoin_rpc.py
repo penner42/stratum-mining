@@ -123,7 +123,7 @@ class BitcoinRPC(object):
             log.info("CHECKING FOR BLOCK AFTER SUBMITBLOCK")
             defer.returnValue((yield self.blockexists(hash_hex, scrypt_hex)))
         else:
-            defer.returnValue(False)
+            defer.returnValue((False, None))
 
     @defer.inlineCallbacks
     def getinfo(self):
