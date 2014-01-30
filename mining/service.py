@@ -196,14 +196,21 @@ class MiningService(GenericService):
         if is_banned:
             raise SubmitException("Worker is temporarily banned")
  
-        Interfaces.share_manager.on_submit_share(worker_name, block_header,
-            block_hash, difficulty, submit_time, True, ip, '', share_diff)
-
         if on_submit != None:
+            # submit share with actual hash returned if coind accepted submission
+            (is_accepted, valid_hash) = on_submit
+            if not is_accepted:
+                valid_hash = block_hash
+            Interfaces.share_manager.on_submit_share(worker_name, block_header,
+                                                     block_hash, difficulty, submit_time, True, ip, '', share_diff)
+
             # Pool performs submitblock() to litecoind. Let's hook
             # to result and report it to share manager
             on_submit.addCallback(Interfaces.share_manager.on_submit_block,
-                worker_name, block_header, block_hash, submit_time, ip, share_diff)
+                                  worker_name, block_header, block_hash, submit_time, ip, share_diff)
+        else:
+            Interfaces.share_manager.on_submit_share(worker_name, block_header,
+                                                     block_hash, difficulty, submit_time, True, ip, '', share_diff)
 
         return True
             
