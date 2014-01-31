@@ -80,12 +80,17 @@ class ShareManagerInterface(object):
         dbi.queue_share([worker_name, block_header, block_hash, difficulty, timestamp, is_valid, ip, self.block_height, self.prev_hash,
                 invalid_reason, share_diff ])
  
-    def on_submit_block(self, on_submit, worker_name, block_header, block_hash, timestamp, ip, share_diff):
+    def on_submit_block(self, on_submit, worker_name, block_header, block_hash, difficulty, submit_time, ip, share_diff):
         (is_accepted, valid_hash) = on_submit
         if (settings.SOLUTION_BLOCK_HASH):
             block_hash = valid_hash
+
+        #submit share
+        Interfaces.share_manager.on_submit_share(worker_name, block_header, block_hash, difficulty, submit_time,
+                                                 True, ip, '', share_diff)
+
         log.info("Block %s %s" % (block_hash, 'ACCEPTED' if is_accepted else 'REJECTED'))
-        dbi.found_block([worker_name, block_header, block_hash, -1, timestamp, is_accepted, ip, self.block_height, self.prev_hash, share_diff ])
+        dbi.found_block([worker_name, block_header, block_hash, -1, submit_time, is_accepted, ip, self.block_height, self.prev_hash, share_diff ])
         
 class TimestamperInterface(object):
     '''This is the only source for current time in the application.
