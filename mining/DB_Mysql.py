@@ -65,6 +65,7 @@ class DB_Mysql():
         # 8: self.prev_hash,
         # 9: invalid_reason, 
         # 10: share_diff
+        # 11: coin_name
 
         log.debug("Importing Shares")
         checkin_times = {}
@@ -78,15 +79,16 @@ class DB_Mysql():
             else:
                 v[5] = 'N'
 
+            # TODO add saving of coinname to other postgres, sqlite
             self.execute(
                 """
                 INSERT INTO `shares`
                 (time, rem_host, username, our_result, 
-                  upstream_result, reason, solution, difficulty)
+                  upstream_result, reason, solution, difficulty, coin_name)
                 VALUES 
                 (FROM_UNIXTIME(%(time)s), %(host)s, 
                   %(uname)s, 
-                  %(lres)s, 'N', %(reason)s, %(solution)s, %(difficulty)s)
+                  %(lres)s, 'N', %(reason)s, %(solution)s, %(difficulty)s, %(coinname)s)
                 """,
                 {
                     "time": v[4], 
@@ -95,7 +97,8 @@ class DB_Mysql():
                     "lres": v[5], 
                     "reason": v[9],
                     "solution": v[2],
-                    "difficulty": v[3]
+                    "difficulty": v[3],
+                    "coinname": v[11]
                 }
             )
 
@@ -145,6 +148,7 @@ class DB_Mysql():
             
             self.dbh.commit()
         else:
+            #TODO add is_block_solution to postgres, sqlite
             self.execute(
                 """
                 INSERT INTO `shares`

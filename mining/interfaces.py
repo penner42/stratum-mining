@@ -78,7 +78,7 @@ class ShareManagerInterface(object):
     def on_submit_share(self, worker_name, block_header, block_hash, difficulty, timestamp, is_valid, ip, invalid_reason, share_diff):
         log.debug("%s (%s) %s %s" % (block_hash, share_diff, 'valid' if is_valid else 'INVALID', worker_name))
         dbi.queue_share([worker_name, block_header, block_hash, difficulty, timestamp, is_valid, ip, self.block_height, self.prev_hash,
-                invalid_reason, share_diff ])
+                invalid_reason, share_diff, settings.COINDAEMON_NAME ])
  
     def on_submit_block(self, on_submit, worker_name, block_header, block_hash, difficulty, submit_time, ip, share_diff):
         (is_accepted, valid_hash) = on_submit
@@ -151,6 +151,9 @@ class Interfaces(object):
         
         #(host, port, user, password) = args
         cls.template_registry.bitcoin_rpc.change_connection(str(host), port, str(user), str(password))
+
+        # TODO add coin name option so username doesn't have to be the same as coin name
+        settings.COINDAEMON_NAME = str(user)
 
         result = (yield cls.template_registry.bitcoin_rpc.getblocktemplate())
         if isinstance(result, dict):

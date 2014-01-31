@@ -217,4 +217,4 @@ class BitcoinRPC(object):
             defer.returnValue((True, valid_hash))
         else:
             log.info("Cannot find block for %s" % hash_hex)
-            defer.returnValue((False, None))
+            defer.returnValue((False, hash_hex))

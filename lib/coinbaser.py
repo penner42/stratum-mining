@@ -32,6 +32,8 @@ class SimpleCoinbaser(object):
         if result['isvalid'] and result['ismine']:
             self.is_valid = True
             log.info("Coinbase address '%s' is valid" % self.address)
+        if 'isvalid' in result and result['isvalid'] == True:
+           log.debug("Is Valid = %s" % result['isvalid'])
             if 'address' in result:
                log.debug("Address = %s " % result['address'])
                self.address = result['address']
@@ -61,11 +63,6 @@ class SimpleCoinbaser(object):
             self.is_valid = False
             log.error("Coinbase address '%s' is NOT valid!" % self.address)
         
-        #def on_new_block(self):
-    #    pass
-    
-    #def on_new_template(self):
-    #    pass
     def _failure(self, failure):
            log.exception("Cannot validate Wallet address '%s'" % self.address)
            raise
