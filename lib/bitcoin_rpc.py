@@ -115,7 +115,6 @@ class BitcoinRPC(object):
                             log.exception("Try Enabling TX Messages in config.py!")
                             raise
                         else:
-                            log.debug("Attempt %s failed. Retrying.", str(attempts))
                             continue
 
         if json.loads(resp)['result'] == None:
