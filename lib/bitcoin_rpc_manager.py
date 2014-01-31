@@ -45,6 +45,7 @@ class BitcoinRPCManager(object):
         if len(self.conns) <= 1:
             log.error("Problem with Pool 0 -- NO ALTERNATE POOLS!!!")
             time.sleep(4)
+	    self.curr_conn = 0
             return
         log.error("Problem with Pool %i Switching to Next!" % (self.curr_conn) )
         self.curr_conn = self.curr_conn + 1
@@ -92,20 +93,19 @@ class BitcoinRPCManager(object):
                 return self.conns[self.curr_conn]._call(method,params)
             except:
                 self.next_connection()
-
     def check_submitblock(self):
         while True:
-            try:
-                return self.conns[self.curr_conn].check_submitblock()
-            except:
-                self.next_connection()
+              try:
+                  return self.conns[self.curr_conn].check_submitblock()
+              except:
+                  self.next_connection()
 
     def submitblock(self, block_hex, hash_hex, scrypt_hex):
-	while True:
-	    try:
-		return self.conns[self.curr_conn].submitblock(block_hex, hash_hex, scrypt_hex)
-	    except:
-		self.next_connection()
+        while True:
+            try:
+               return self.conns[self.curr_conn].submitblock(block_hex, hash_hex, scrypt_hex)
+            except:
+                self.next_connection()
 
     def getinfo(self):
         while True:

@@ -40,7 +40,7 @@ class BitcoinRPC(object):
                 'params': params,
                 'id': '1',
             }))
-
+    
     @defer.inlineCallbacks
     def check_submitblock(self):
         try:
@@ -119,11 +119,10 @@ class BitcoinRPC(object):
                             continue
 
         if json.loads(resp)['result'] == None:
-            # make sure the block was created.
-            log.info("CHECKING FOR BLOCK AFTER SUBMITBLOCK")
-            defer.returnValue((yield self.blockexists(hash_hex, scrypt_hex)))
+            # make sure the block was created. 
+            defer.returnValue((yield self.blockexists(hash_hex)))
         else:
-            defer.returnValue((False, None))
+            defer.returnValue(False)
 
     @defer.inlineCallbacks
     def getinfo(self):
@@ -218,4 +217,4 @@ class BitcoinRPC(object):
             defer.returnValue((True, valid_hash))
         else:
             log.info("Cannot find block for %s" % hash_hex)
-            defer.returnValue((False, valid_hash))
+            defer.returnValue(False)
