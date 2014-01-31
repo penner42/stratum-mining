@@ -120,7 +120,7 @@ class BitcoinRPC(object):
 
         if json.loads(resp)['result'] == None:
             # make sure the block was created. 
-            defer.returnValue((yield self.blockexists(hash_hex)))
+            defer.returnValue((yield self.blockexists(hash_hex, scrypt_hex)))
         else:
             defer.returnValue((False, None))
 
