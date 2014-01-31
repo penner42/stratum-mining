@@ -198,9 +198,9 @@ class MiningService(GenericService):
  
         if on_submit != None:
             # submit share with actual hash returned if coind accepted submission
-            (is_accepted, valid_hash) = on_submit
-            if not is_accepted:
-                valid_hash = block_hash
+            #(is_accepted, valid_hash) = on_submit
+            #if not is_accepted:
+            #    valid_hash = block_hash
             Interfaces.share_manager.on_submit_share(worker_name, block_header,
                                                      block_hash, difficulty, submit_time, True, ip, '', share_diff)
 
