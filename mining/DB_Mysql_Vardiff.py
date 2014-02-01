@@ -63,6 +63,19 @@ class DB_Mysql_Vardiff(DB_Mysql.DB_Mysql):
             self.dbh.commit()
     
     def found_block(self, data):
+        # Data layout
+        # 0: worker_name,
+        # 1: block_header,
+        # 2: block_hash,
+        # 3: difficulty,
+        # 4: timestamp,
+        # 5: is_valid,
+        # 6: ip,
+        # 7: self.block_height,
+        # 8: self.prev_hash,
+        # 9: share_diff
+        # 10: coin_name
+        #
         # for database compatibility we are converting our_worker to Y/N format
         if data[5]:
             data[5] = 'Y'
@@ -108,11 +121,11 @@ class DB_Mysql_Vardiff(DB_Mysql.DB_Mysql):
                 """
                 INSERT INTO `shares`
                 (time, rem_host, username, our_result, 
-                  upstream_result, reason, solution, is_block_solution)
+                  upstream_result, solution, is_block_solution, coin_name)
                 VALUES 
                 (FROM_UNIXTIME(%(time)s), %(host)s, 
                   %(uname)s, 
-                  %(lres)s, %(result)s, %(reason)s, %(solution)s, 'Y')
+                  %(lres)s, %(result)s, %(solution)s, 'Y', %(coinname)s)
                 """,
                 {
                     "time": data[4],
@@ -120,8 +133,8 @@ class DB_Mysql_Vardiff(DB_Mysql.DB_Mysql):
                     "uname": data[0],
                     "lres": data[5],
                     "result": data[5],
-                    "reason": data[9],
-                    "solution": data[2]
+                    "solution": data[2],
+                    "coinname": data[10]
                 }
             )
             self.dbh.commit()
