@@ -2,7 +2,7 @@ import time
 import hashlib
 import lib.settings as settings
 import lib.logger
-log = lib.logger.get_logger('DB_Mysql')
+log = lib.logger.get_logger('DB_Mysql_Multicoin')
 
 import MySQLdb
 import DB_Mysql

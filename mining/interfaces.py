@@ -77,8 +77,13 @@ class ShareManagerInterface(object):
     
     def on_submit_share(self, worker_name, block_header, block_hash, difficulty, timestamp, is_valid, ip, invalid_reason, share_diff):
         log.debug("%s (%s) %s %s" % (block_hash, share_diff, 'valid' if is_valid else 'INVALID', worker_name))
-        dbi.queue_share([worker_name, block_header, block_hash, difficulty, timestamp, is_valid, ip, self.block_height, self.prev_hash,
-                invalid_reason, share_diff, settings.COINDAEMON_NAME ])
+        try:
+            share_data = [worker_name, block_header, block_hash, difficulty, timestamp, is_valid, ip, self.block_height, self.prev_hash,
+                invalid_reason, share_diff, settings.COINDAEMON_NAME]
+        except NameError as e:
+            share_data = [worker_name, block_header, block_hash, difficulty, timestamp, is_valid, ip, self.block_height, self.prev_hash,
+                invalid_reason, share_diff]
+        dbi.queue_share(share_data)
  
     def on_submit_block(self, on_submit, worker_name, block_header, block_hash, difficulty, submit_time, ip, share_diff):
         (is_accepted, valid_hash) = on_submit
