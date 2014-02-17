@@ -70,6 +70,9 @@ class MiningService(GenericService):
     def change_litecoind(self, *args):
         if len(args) != 7:
             raise SubmitException("Incorrect number of parameters sent")
+
+        if settings.COINSWITCHING == False:
+            raise SubmitException("Coin switching disabled in settings.")
         
         Interfaces.changeCoin(args[0], args[1], args[2], args[3], args[4], args[5], args[6])
         return True
