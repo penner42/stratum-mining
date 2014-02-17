@@ -11,6 +11,7 @@ You NEED to set the parameters in BASIC SETTINGS
 
 CENTRAL_WALLET = 'set_valid_addresss_in_config!'    # local coin address where money goes
 
+COINDAEMON_NAME = 'LTC'
 COINDAEMON_TRUSTED_HOST = 'localhost'
 COINDAEMON_TRUSTED_PORT = 8332
 COINDAEMON_TRUSTED_USER = 'user'
@@ -24,6 +25,12 @@ COINDAEMON_TRUSTED_PASSWORD = 'somepassword'
 # For Coins which support TX Messages please enter yes in the TX selection
 COINDAEMON_ALGO = 'scrypt'
 COINDAEMON_TX = 'no'
+
+# ******************** COIN SWITCHER ****************
+# Set to True to enable coin-switching capability.
+# Needs to be a setting due to database differences
+COINSWITCHING  = False
+
 # ******************** BASIC SETTINGS ***************
 # Backup Coin Daemon address's (consider having at least 1 backup)
 # You can have up to 99

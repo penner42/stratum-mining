@@ -77,13 +77,29 @@ class ShareManagerInterface(object):
     
     def on_submit_share(self, worker_name, block_header, block_hash, difficulty, timestamp, is_valid, ip, invalid_reason, share_diff):
         log.debug("%s (%s) %s %s" % (block_hash, share_diff, 'valid' if is_valid else 'INVALID', worker_name))
-        dbi.queue_share([worker_name, block_header, block_hash, difficulty, timestamp, is_valid, ip, self.block_height, self.prev_hash,
-                invalid_reason, share_diff ])
+        try:
+            share_data = [worker_name, block_header, block_hash, difficulty, timestamp, is_valid, ip, self.block_height, self.prev_hash,
+                invalid_reason, share_diff, settings.COINDAEMON_NAME]
+        except NameError as e:
+            share_data = [worker_name, block_header, block_hash, difficulty, timestamp, is_valid, ip, self.block_height, self.prev_hash,
+                invalid_reason, share_diff]
+        dbi.queue_share(share_data)
  
-    def on_submit_block(self, is_accepted, worker_name, block_header, block_hash, timestamp, ip, share_diff):
+    def on_submit_block(self, on_submit, worker_name, block_header, block_hash, difficulty, submit_time, ip, share_diff):
+        (is_accepted, valid_hash) = on_submit
+        if (settings.SOLUTION_BLOCK_HASH):
+            block_hash = valid_hash
+
+        #submit share
+        Interfaces.share_manager.on_submit_share(worker_name, block_header, block_hash, difficulty, submit_time,
+                                                 True, ip, '', share_diff)
+
         log.info("Block %s %s" % (block_hash, 'ACCEPTED' if is_accepted else 'REJECTED'))
-        dbi.do_import(dbi, True)
-        dbi.found_block([worker_name, block_header, block_hash, -1, timestamp, is_accepted, ip, self.block_height, self.prev_hash, share_diff ])
+        try:
+            block_data = [worker_name, block_header, block_hash, -1, submit_time, is_accepted, ip, self.block_height, self.prev_hash, share_diff, settings.COINDAEMON_NAME]
+        except NameError as e:
+            block_data = [worker_name, block_header, block_hash, -1, submit_time, is_accepted, ip, self.block_height, self.prev_hash, share_diff]
+        dbi.found_block(block_data)
         
 class TimestamperInterface(object):
     '''This is the only source for current time in the application.
@@ -127,3 +143,60 @@ class Interfaces(object):
     def set_template_registry(cls, registry):
         dbi.set_bitcoinrpc(registry.bitcoin_rpc)
         cls.template_registry = registry
+
+    @classmethod
+    @defer.inlineCallbacks
+    def changeCoin(cls, host, port, user, password, address, powpos, txcomments):
+
+        settings.COINDAEMON_TX = 'yes' if txcomments else 'no'
+        log.info("CHANGING COIN # "+str(user)+" txcomments: "+settings.COINDAEMON_TX)
+        
+        ''' Function to add a litecoind instance live '''
+        from lib.coinbaser import SimpleCoinbaser
+        from lib.template_registry import TemplateRegistry
+        from lib.block_template import BlockTemplate
+        from lib.block_updater import BlockUpdater
+        from subscription import MiningSubscription
+        
+        #(host, port, user, password) = args
+        cls.template_registry.bitcoin_rpc.change_connection(str(host), port, str(user), str(password))
+
+        # TODO add coin name option so username doesn't have to be the same as coin name
+        settings.COINDAEMON_NAME = str(user)
+
+        result = (yield cls.template_registry.bitcoin_rpc.getblocktemplate())
+        if isinstance(result, dict):
+            # litecoind implements version 1 of getblocktemplate
+            if result['version'] >= 1:
+                result = (yield cls.template_registry.bitcoin_rpc.getdifficulty())
+                if isinstance(result,dict):
+                    if 'proof-of-stake' in result:
+                        settings.COINDAEMON_Reward = 'POS'
+                        log.info("Coin detected as POS")
+                else:
+                    settings.COINDAEMON_Reward = 'POW'
+                    log.info("Coin detected as POW")
+            else:
+                    log.error("Block Version mismatch: %s" % result['version'])
+
+        cls.template_registry.coinbaser.change(address)
+        (yield cls.template_registry.coinbaser.on_load)
+        
+        cls.template_registry.update(BlockTemplate,
+                                            cls.template_registry.coinbaser,
+                                            cls.template_registry.bitcoin_rpc,
+                                            31,
+                                            MiningSubscription.on_template,
+                                            cls.share_manager.on_network_block)
+        
+        result = (yield cls.template_registry.bitcoin_rpc.check_submitblock())
+        if result == True:
+            log.info("Found submitblock")
+        elif result == False:
+            log.info("Did not find submitblock")
+        else:
+            log.info("unknown submitblock result")
+            
+        (yield cls.template_registry.update_block())
+        log.info("New litecoind connection changed %s:%s" % (host, port))
+            

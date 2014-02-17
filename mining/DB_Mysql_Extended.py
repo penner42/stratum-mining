@@ -156,6 +156,7 @@ class DB_Mysql_Extended(DB_Mysql.DB_Mysql):
         # 8: self.prev_hash,
         # 9: invalid_reason, 
         # 10: share_diff
+        # 11: coinname
 
         log.debug("Importing Shares")
         checkin_times = {}
@@ -163,6 +164,7 @@ class DB_Mysql_Extended(DB_Mysql.DB_Mysql):
         best_diff = 0
         
         for k, v in enumerate(data):
+            log.debug("v %s", str(v))
             total_shares += v[3]
             
             if v[0] in checkin_times:
@@ -182,18 +184,18 @@ class DB_Mysql_Extended(DB_Mysql.DB_Mysql):
 
             if v[10] > best_diff:
                 best_diff = v[10]
-
+            # TODO add saving of coinname to other postgres, sqlite
             self.execute(
                 """
                 INSERT INTO `shares` 
                 (time, rem_host, worker, our_result, upstream_result, 
                   reason, solution, block_num, prev_block_hash, 
-                  useragent, difficulty) 
+                  useragent, difficulty, coin_name)
                 VALUES
                 (FROM_UNIXTIME(%(time)s), %(host)s, 
                   (SELECT `id` FROM `pool_worker` WHERE `username` = %(uname)s),
                   %(lres)s, 0, %(reason)s, %(solution)s, 
-                  %(blocknum)s, %(hash)s, '', %(difficulty)s)
+                  %(blocknum)s, %(hash)s, '', %(difficulty)s, %(coinname)s)
                 """,
                 {
                     "time": v[4],
@@ -204,7 +206,8 @@ class DB_Mysql_Extended(DB_Mysql.DB_Mysql):
                     "solution": v[2],
                     "blocknum": v[7],
                     "hash": v[8],
-                    "difficulty": v[3]
+                    "difficulty": v[3],
+                    "coinname": v[11]
                 }
             )
 

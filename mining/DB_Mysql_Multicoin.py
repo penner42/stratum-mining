@@ -2,11 +2,11 @@ import time
 import hashlib
 import lib.settings as settings
 import lib.logger
-log = lib.logger.get_logger('DB_Mysql')
+log = lib.logger.get_logger('DB_Mysql_Multicoin')
 
 import MySQLdb
                 
-class DB_Mysql():
+class DB_Mysql_Multicoin():
     def __init__(self):
         log.debug("Connecting to DB")
         
@@ -84,11 +84,11 @@ class DB_Mysql():
                 """
                 INSERT INTO `shares`
                 (time, rem_host, username, our_result, 
-                  upstream_result, reason, solution, difficulty, coin_name)
+                  upstream_result, reason, solution, difficulty)
                 VALUES 
                 (FROM_UNIXTIME(%(time)s), %(host)s, 
                   %(uname)s, 
-                  %(lres)s, 'N', %(reason)s, %(solution)s, %(difficulty)s, %(coinname)s)
+                  %(lres)s, 'N', %(reason)s, %(solution)s, %(difficulty)s)
                 """,
                 {
                     "time": v[4], 
@@ -134,7 +134,6 @@ class DB_Mysql():
                 """
                 UPDATE `shares`
                 SET `upstream_result` = %(result)s,
-                `is_block_solution` = 'Y'
                 WHERE `solution` = %(solution)s
                 AND `id` = %(id)s
                 LIMIT 1
@@ -153,11 +152,11 @@ class DB_Mysql():
                 """
                 INSERT INTO `shares`
                 (time, rem_host, username, our_result, 
-                  upstream_result, reason, solution. is_block_solution)
+                  upstream_result, reason, solution)
                 VALUES 
                 (FROM_UNIXTIME(%(time)s), %(host)s, 
                   %(uname)s, 
-                  %(lres)s, %(result)s, %(reason)s, %(solution)s), 'Y'
+                  %(lres)s, %(result)s, %(reason)s, %(solution)s)
                 """,
                 {
                     "time": data[4],

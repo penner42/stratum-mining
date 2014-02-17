@@ -21,9 +21,9 @@ class BitcoinRPC(object):
             'Content-Type': 'text/json',
             'Authorization': 'Basic %s' % self.credentials,
         }
-        client.HTTPClientFactory.noisy = False
-	self.has_submitblock = False        
-
+        self.has_submitblock = None
+	client.HTTPClientFactory.noisy = False
+        
     def _call_raw(self, data):
         client.Headers
         return client.getPage(
@@ -44,26 +44,27 @@ class BitcoinRPC(object):
     @defer.inlineCallbacks
     def check_submitblock(self):
         try:
-            log.info("Checking for submitblock")
+            log.debug("Checking for submitblock")
             resp = (yield self._call('submitblock', []))
-	    self.has_submitblock = True
+            log.debug("unknown submitblock check result.")
+            self.has_submitblock = None
+
         except Exception as e:
             if (str(e) == "404 Not Found"):
                 log.debug("No submitblock detected.")
-		self.has_submitblock = False
+                self.has_submitblock = False
             elif (str(e) == "500 Internal Server Error"):
                 log.debug("submitblock detected.")
-		self.has_submitblock = True
+                self.has_submitblock = True
             else:
                 log.debug("unknown submitblock check result.")
-		self.has_submitblock = True
+                self.has_submitblock = True
         finally:
-              defer.returnValue(self.has_submitblock)
+            defer.returnValue(self.has_submitblock)
 
-    
     @defer.inlineCallbacks
     def submitblock(self, block_hex, hash_hex, scrypt_hex):
-  #try 5 times? 500 Internal Server Error could mean random error or that TX messages setting is wrong
+    #try 5 times? 500 Internal Server Error could mean random error or that TX messages setting is wrong
         attempts = 0
         while True:
             attempts += 1
@@ -80,6 +81,7 @@ class BitcoinRPC(object):
                         log.exception("Try Enabling TX Messages in config.py!")
                         raise
                     else:
+                        log.debug("Attempt %s failed. Retrying.", str(attempts))
                         continue
             elif self.has_submitblock == False:
                 try:
@@ -93,6 +95,7 @@ class BitcoinRPC(object):
                         log.exception("Try Enabling TX Messages in config.py!")
                         raise
                     else:
+                        log.debug("Attempt %s failed. Retrying.", str(attempts))
                         continue
             else:  # self.has_submitblock = None; unable to detect submitblock, try both
                 try:
@@ -115,11 +118,10 @@ class BitcoinRPC(object):
                             continue
 
         if json.loads(resp)['result'] == None:
-            # make sure the block was created.
-            log.info("CHECKING FOR BLOCK AFTER SUBMITBLOCK")
+            # make sure the block was created. 
             defer.returnValue((yield self.blockexists(hash_hex, scrypt_hex)))
         else:
-            defer.returnValue(False)
+            defer.returnValue((False, None))
 
     @defer.inlineCallbacks
     def getinfo(self):
@@ -172,10 +174,10 @@ class BitcoinRPC(object):
                 if "height" in result:
                     blockheight = result['height']
                 else:
-                    defer.returnValue(True)
+                    defer.returnValue((True, valid_hash))
             else:
                 log.info("Cannot find block for %s" % hash_hex)
-                defer.returnValue(False)
+                defer.returnValue((False, hash_hex))
 
         except Exception as e:
             try:
@@ -187,14 +189,14 @@ class BitcoinRPC(object):
                     if "height" in result:
                         blockheight = result['height']
                     else:
-                        defer.returnValue(True)
+                        defer.returnValue((True, valid_hash))
                 else:
                     log.info("Cannot find block for %s" % scrypt_hex)
-                    defer.returnValue(False)
+                    defer.returnValue((False, scrypt_hex))
 
             except Exception as e:
                 log.info("Cannot find block for hash_hex %s or scrypt_hex %s" % hash_hex, scrypt_hex)
-                defer.returnValue(False)
+                defer.returnValue((False, hash_hex))
 
         #after we've found the block, check the block with that height in the blockchain to see if hashes match
         try:
@@ -204,14 +206,14 @@ class BitcoinRPC(object):
             log.debug("hash of block of height %s: %s", blockheight, hash)
             if hash == valid_hash:
                 log.debug("Block confirmed: hash of block matches hash of blockheight")
-                defer.returnValue(True)
+                defer.returnValue((True, valid_hash))
             else:
                 log.debug("Block invisible: hash of block does not match hash of blockheight")
-                defer.returnValue(False)
+                defer.returnValue((False, valid_hash))
 
         except Exception as e:
             # cannot get blockhash from height; block was created, so return true
-            defer.returnValue(True)
+            defer.returnValue((True, valid_hash))
         else:
             log.info("Cannot find block for %s" % hash_hex)
-            defer.returnValue(False)
+            defer.returnValue((False, hash_hex))

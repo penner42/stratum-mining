@@ -2,12 +2,12 @@ import time
 import hashlib
 import lib.settings as settings
 import lib.logger
-log = lib.logger.get_logger('DB_Mysql')
+log = lib.logger.get_logger('DB_Mysql_Multicoin')
 
 import MySQLdb
 import DB_Mysql
                 
-class DB_Mysql_Vardiff(DB_Mysql.DB_Mysql):
+class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
     def __init__(self):
         DB_Mysql.DB_Mysql.__init__(self)
     
@@ -42,11 +42,11 @@ class DB_Mysql_Vardiff(DB_Mysql.DB_Mysql):
                 """
                 INSERT INTO `shares`
                 (time, rem_host, username, our_result, 
-                  upstream_result, reason, solution, difficulty)
+                  upstream_result, reason, solution, difficulty, coin_name)
                 VALUES 
                 (FROM_UNIXTIME(%(time)s), %(host)s, 
                   %(uname)s, 
-                  %(lres)s, 'N', %(reason)s, %(solution)s, %(difficulty)s)
+                  %(lres)s, 'N', %(reason)s, %(solution)s, %(difficulty)s, %(coinname)s)
                 """,
                 {
                     "time": v[4], 
@@ -56,6 +56,7 @@ class DB_Mysql_Vardiff(DB_Mysql.DB_Mysql):
                     "reason": v[9],
                     "solution": v[2],
                     "difficulty": v[3],
+                    "coinname": v[11]
                 }
             )
 
@@ -102,7 +103,7 @@ class DB_Mysql_Vardiff(DB_Mysql.DB_Mysql):
             self.execute(
                 """
                 UPDATE `shares`
-                SET `upstream_result` = %(result)s
+                SET `upstream_result` = %(result)s, `is_block_solution` = 'Y'
                 WHERE `solution` = %(solution)s
                 AND `id` = %(id)s
                 LIMIT 1
@@ -120,11 +121,11 @@ class DB_Mysql_Vardiff(DB_Mysql.DB_Mysql):
                 """
                 INSERT INTO `shares`
                 (time, rem_host, username, our_result, 
-                  upstream_result, solution)
+                  upstream_result, solution, is_block_solution, coin_name)
                 VALUES 
                 (FROM_UNIXTIME(%(time)s), %(host)s, 
                   %(uname)s, 
-                  %(lres)s, %(result)s, %(solution)s)
+                  %(lres)s, %(result)s, %(solution)s, 'Y', %(coinname)s)
                 """,
                 {
                     "time": data[4],
@@ -133,6 +134,7 @@ class DB_Mysql_Vardiff(DB_Mysql.DB_Mysql):
                     "lres": data[5],
                     "result": data[5],
                     "solution": data[2],
+                    "coinname": data[10]
                 }
             )
             self.dbh.commit()

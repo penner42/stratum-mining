@@ -64,8 +64,16 @@ class MiningService(GenericService):
         #(host, port, user, password) = args
         Interfaces.template_registry.bitcoin_rpc.add_connection(args[0], args[1], args[2], args[3])
         log.info("New litecoind connection added %s:%s" % (args[0], args[1]))
-        return True 
-    
+        return True
+
+    @admin
+    def change_litecoind(self, *args):
+        if len(args) != 7:
+            raise SubmitException("Incorrect number of parameters sent")
+        
+        Interfaces.changeCoin(args[0], args[1], args[2], args[3], args[4], args[5], args[6])
+        return True
+
     @admin
     def refresh_config(self):
         settings.setup()
@@ -188,14 +196,18 @@ class MiningService(GenericService):
         if is_banned:
             raise SubmitException("Worker is temporarily banned")
  
-        Interfaces.share_manager.on_submit_share(worker_name, block_header,
-            block_hash, difficulty, submit_time, True, ip, '', share_diff)
-
         if on_submit != None:
+            # found a block solution - add share to db table in callback
             # Pool performs submitblock() to litecoind. Let's hook
             # to result and report it to share manager
-            on_submit.addCallback(Interfaces.share_manager.on_submit_block,
-                worker_name, block_header, block_hash, submit_time, ip, share_diff)
+            #Interfaces.share_manager.on_submit_share(worker_name, block_header,
+            #                                         block_hash, difficulty, submit_time, True, ip, '', share_diff)
+
+            on_submit.addCallback(Interfaces.share_manager.on_submit_block, worker_name, block_header, block_hash,
+                                  difficulty, submit_time, ip, share_diff)
+        else:
+            Interfaces.share_manager.on_submit_share(worker_name, block_header,
+                                                     block_hash, difficulty, submit_time, True, ip, '', share_diff)
 
         return True
             
