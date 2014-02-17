@@ -49,7 +49,7 @@ class DBInterface():
                 if settings.COINSWITCHING:
                     log.debug("DB_Mysql_Vardiff Multicoin INIT")
                     import DB_Mysql_Vardiff_Multicoin
-                    return DB_Mysql_Vardiff.DB_Mysql_Vardiff_Multicoin()
+                    return DB_Mysql_Vardiff_Multicoin.DB_Mysql_Vardiff_Multicoin()
                 else:
                     log.debug("DB_Mysql_Vardiff INIT")
                     import DB_Mysql_Vardiff
@@ -58,7 +58,7 @@ class DBInterface():
                 if settings.COINSWITCHING:
                     log.debug('DB_Mysql Multicoin INIT')
                     import DB_Mysql_Multicoin
-                    return DB_Mysql.DB_Mysql_Multicoin()
+                    return DB_Mysql_Multicoin.DB_Mysql_Multicoin()
                 else:
                     log.debug('DB_Mysql INIT')
                     import DB_Mysql
