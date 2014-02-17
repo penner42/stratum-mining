@@ -24,6 +24,12 @@ COINDAEMON_TRUSTED_PASSWORD = 'somepassword'
 # For Coins which support TX Messages please enter yes in the TX selection
 COINDAEMON_ALGO = 'scrypt'
 COINDAEMON_TX = 'no'
+
+# ******************** COIN SWITCHER ****************
+# Set to True to enable coin-switching capability.
+# Needs to be a setting due to database differences
+COINSWITCHING  = True
+
 # ******************** BASIC SETTINGS ***************
 # Backup Coin Daemon address's (consider having at least 1 backup)
 # You can have up to 99

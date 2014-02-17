@@ -45,11 +45,16 @@ class DBInterface():
             import DB_Sqlite
             return DB_Sqlite.DB_Sqlite()
         elif settings.DATABASE_DRIVER == "mysql":
-             if settings.VARIABLE_DIFF:
-                log.debug("DB_Mysql_Vardiff INIT")
-                import DB_Mysql_Vardiff
-                return DB_Mysql_Vardiff.DB_Mysql_Vardiff()
-             else:  
+            if settings.VARIABLE_DIFF:
+                if settings.COINSWITCHING:
+                    log.debug("DB_Mysql_Vardiff INIT")
+                    import DB_Mysql_Vardiff_Multicoin
+                    return DB_Mysql_Vardiff.DB_Mysql_Vardiff_Multicoin()
+                else:
+                    log.debug("DB_Mysql_Vardiff INIT")
+                    import DB_Mysql_Vardiff
+                    return DB_Mysql_Vardiff.DB_Mysql_Vardiff()
+            else:
                 log.debug('DB_Mysql INIT')
                 import DB_Mysql
                 return DB_Mysql.DB_Mysql()

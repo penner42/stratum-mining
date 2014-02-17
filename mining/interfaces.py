@@ -90,7 +90,11 @@ class ShareManagerInterface(object):
                                                  True, ip, '', share_diff)
 
         log.info("Block %s %s" % (block_hash, 'ACCEPTED' if is_accepted else 'REJECTED'))
-        dbi.found_block([worker_name, block_header, block_hash, -1, submit_time, is_accepted, ip, self.block_height, self.prev_hash, share_diff, settings.COINDAEMON_NAME ])
+        try:
+            block_data = [worker_name, block_header, block_hash, -1, submit_time, is_accepted, ip, self.block_height, self.prev_hash, share_diff, settings.COINDAEMON_NAME]
+        except NameError as e:
+            block_data = [worker_name, block_header, block_hash, -1, submit_time, is_accepted, ip, self.block_height, self.prev_hash, share_diff]
+        dbi.found_block(block_data)
         
 class TimestamperInterface(object):
     '''This is the only source for current time in the application.
