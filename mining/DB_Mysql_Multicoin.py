@@ -45,8 +45,8 @@ class DB_Mysql_Multicoin():
 
     @defer.inlineCallbacks
     def fetchone_nb(self, query, args=None):
+        log.debug("ASDFASDFASDF")
         resp = yield self.dbpool.runQuery(query, args)
-        log.debug("ASDFASDFASDF %s" % str(resp))
         defer.returnValue(resp[0])
 
     def execute(self, query, args=None):
