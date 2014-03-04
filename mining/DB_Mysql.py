@@ -209,7 +209,6 @@ class DB_Mysql():
                 yield result
                 
 
-    @defer.inlineCallbacks
     def get_user_nb(self, id_or_username):
         log.debug("Finding nb user with id or username of %s", id_or_username)
 
@@ -225,7 +224,7 @@ class DB_Mysql():
                 "uname": id_or_username
             }
         )
-        defer.returnValue(user)
+        return user
 
     def get_user(self, id_or_username):
         log.debug("Finding user with id or username of %s", id_or_username)
