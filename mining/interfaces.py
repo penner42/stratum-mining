@@ -28,7 +28,7 @@ class WorkerManagerInterface(object):
         return dbi.check_password(worker_name, worker_password)
  
     def get_user_difficulty(self, worker_name):
-        wd = yield dbi.get_user(worker_name)
+        wd = yield dbi.get_user_nb(worker_name)
         if len(wd) > 6:
             if wd[6] != 0:
                 defer.returnValue(True, wd[6])
