@@ -26,7 +26,8 @@ class WorkerManagerInterface(object):
     def authorize(self, worker_name, worker_password):
         # Important NOTE: This is called on EVERY submitted share. So you'll need caching!!!
         return dbi.check_password(worker_name, worker_password)
- 
+
+    @defer.inlineCallbacks
     def get_user_difficulty(self, worker_name):
         wd = yield dbi.get_user_nb(worker_name)
         log.debug("BLAHASDF %s" % str(wd))
