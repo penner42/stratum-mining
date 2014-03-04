@@ -201,7 +201,7 @@ class DBInterface():
         if self.cache.get(id) is None:
             user = yield self.dbi.get_user_nb(id)
             self.cache.set(id, user)
-        defer.returnValue(self.cache.get(id))
+        defer.returnValue(defer.maybeDeferred(self.cache.get(id)))
 
     def get_user(self, id):
         if self.cache.get(id) is None:
