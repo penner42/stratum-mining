@@ -29,6 +29,7 @@ class WorkerManagerInterface(object):
  
     def get_user_difficulty(self, worker_name):
         wd = yield dbi.get_user_nb(worker_name)
+        log.debug("BLAHASDF %s" % str(wd))
         if len(wd) > 6:
             if wd[6] != 0:
                 defer.returnValue(True, wd[6])
