@@ -211,7 +211,7 @@ class DB_Mysql():
 
     @defer.inlineCallbacks
     def get_user_nb(self, id_or_username):
-        log.debug("Finding user with id or username of %s", id_or_username)
+        log.debug("Finding nb user with id or username of %s", id_or_username)
 
         user = self.fetchone_nb(
             """
