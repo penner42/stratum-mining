@@ -199,7 +199,7 @@ class DBInterface():
     @defer.inlineCallbacks
     def get_user_nb(self, id):
         if self.cache.get(id) is None:
-            user = self.dbi.get_user_nb(id)
+            user = yield self.dbi.get_user_nb(id)
             self.cache.set(id, user)
         user = self.cache.get(id)
         log.debug("BLAHBLAH %s" % str(user))
