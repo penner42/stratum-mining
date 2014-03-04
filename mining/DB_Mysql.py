@@ -47,6 +47,7 @@ class DB_Mysql():
     @defer.inlineCallbacks
     def fetchone_nb(self, query, args=None):
         resp = yield self.dbpool.runQuery(query, args)
+        log.debug(str(resp))
         defer.returnValue(resp[0])
 
     def execute(self, query, args=None):
@@ -212,7 +213,7 @@ class DB_Mysql():
     def get_user(self, id_or_username):
         log.debug("Finding user with id or username of %s", id_or_username)
 
-        user = yield self.fetchone_nb(
+        user = self.fetchone_nb(
             """
             SELECT *
             FROM `pool_worker`
