@@ -96,7 +96,7 @@ class MiningService(GenericService):
             session['authorized'][worker_name] = worker_password
             is_ext_diff = False
             if settings.ALLOW_EXTERNAL_DIFFICULTY:
-                (is_ext_diff, session['difficulty']) = Interfaces.worker_manager.get_user_difficulty(worker_name)
+                (is_ext_diff, session['difficulty']) = yield Interfaces.worker_manager.get_user_difficulty(worker_name)
                 self.connection_ref().rpc('mining.set_difficulty', [session['difficulty'], ], is_notification=True)
             else:
                 session['difficulty'] = settings.POOL_TARGET

@@ -2,6 +2,9 @@ import time
 import hashlib
 import lib.settings as settings
 import lib.logger
+from twisted.enterprise import adbapi
+from twisted.internet import defer
+
 log = lib.logger.get_logger('DB_Mysql')
 
 import MySQLdb
@@ -31,7 +34,21 @@ class DB_Mysql():
         )
         self.dbc = self.dbh.cursor()
         self.dbh.autocommit(True)
-            
+
+        self.dbpool = adbapi.ConnectionPool(
+            "MySQLdb",
+            getattr(settings, 'DB_MYSQL_HOST'),
+            getattr(settings, 'DB_MYSQL_USER'),
+            getattr(settings, 'DB_MYSQL_PASS'),
+            getattr(settings, 'DB_MYSQL_DBNAME'),
+            getattr(settings, 'DB_MYSQL_PORT')
+        )
+
+    @defer.inlineCallbacks
+    def fetchone_nb(self, query, args=None):
+        resp = yield self.dbpool.runQuery(query, args)
+        defer.returnValue(resp[0])
+
     def execute(self, query, args=None):
         try:
             self.dbc.execute(query, args)
@@ -190,11 +207,12 @@ class DB_Mysql():
             for result in results:
                 yield result
                 
-                
+
+    @defer.inlineCallbacks
     def get_user(self, id_or_username):
         log.debug("Finding user with id or username of %s", id_or_username)
-        
-        self.execute(
+
+        user = yield self.fetchone_nb(
             """
             SELECT *
             FROM `pool_worker`
@@ -207,8 +225,7 @@ class DB_Mysql():
             }
         )
         
-        user = self.dbc.fetchone()
-        return user
+        defer.returnValue(user)
 
     def get_uid(self, id_or_username):
         log.debug("Finding user id of %s", id_or_username)
