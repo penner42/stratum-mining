@@ -203,7 +203,7 @@ class DBInterface():
             self.cache.set(id, user)
         user = self.cache.get(id)
         log.debug("BLAHBLAH %s" % str(user))
-        defer.returnValue(defer.maybeDeferred(user))
+        defer.returnValue(user)
 
     def get_user(self, id):
         if self.cache.get(id) is None:
