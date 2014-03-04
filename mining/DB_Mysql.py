@@ -213,7 +213,7 @@ class DB_Mysql():
     def get_user_nb(self, id_or_username):
         log.debug("Finding nb user with id or username of %s", id_or_username)
 
-        user = self.fetchone_nb(
+        user = yield self.fetchone_nb(
             """
             SELECT *
             FROM `pool_worker`
