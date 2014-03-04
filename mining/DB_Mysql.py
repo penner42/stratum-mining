@@ -225,7 +225,7 @@ class DB_Mysql():
                 "uname": id_or_username
             }
         )
-        
+        log.debug("ASDFBLAH %s" % user)
         defer.returnValue(user)
 
     def get_user(self, id_or_username):
