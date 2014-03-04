@@ -208,7 +208,7 @@ class DB_Mysql_Multicoin():
                 
                 
     @defer.inlineCallbacks
-    def get_user(self, id_or_username):
+    def get_user_nb(self, id_or_username):
         log.debug("Finding user with id or username of %s", id_or_username)
 
         user = self.fetchone_nb(
@@ -225,6 +225,25 @@ class DB_Mysql_Multicoin():
         )
 
         defer.returnValue(user)
+
+    def get_user(self, id_or_username):
+        log.debug("Finding user with id or username of %s", id_or_username)
+
+        self.execute(
+            """
+            SELECT *
+            FROM `pool_worker`
+            WHERE `id` = %(id)s
+              OR `username` = %(uname)s
+            """,
+            {
+                "id": id_or_username if id_or_username.isdigit() else -1,
+                "uname": id_or_username
+            }
+        )
+
+        user = self.dbc.fetchone()
+        return user
 
     def get_uid(self, id_or_username):
         log.debug("Finding user id of %s", id_or_username)

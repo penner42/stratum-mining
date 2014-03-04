@@ -197,11 +197,17 @@ class DBInterface():
         return self.dbi.list_users()
 
     @defer.inlineCallbacks
-    def get_user(self, id):
+    def get_user_nb(self, id):
         if self.cache.get(id) is None:
-            user = yield self.dbi.get_user(id)
+            user = yield self.dbi.get_user_nb(id)
             self.cache.set(id, user)
         defer.returnValue(self.cache.get(id))
+
+    def get_user(self, id):
+        if self.cache.get(id) is None:
+            user = self.dbi.get_user(id)
+            self.cache.set(id, user)
+        return self.cache.get(id)
 
     def user_exists(self, username):
         if self.cache.get(username) is not None:
