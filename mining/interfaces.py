@@ -33,9 +33,9 @@ class WorkerManagerInterface(object):
         log.debug("BLAHASDF %s" % str(wd))
         if len(wd) > 6:
             if wd[6] != 0:
-                defer.returnValue(True, wd[6])
+                defer.returnValue((True, wd[6]))
                 #dbi.update_worker_diff(worker_name, wd[6])
-        defer.returnValue(False, settings.POOL_TARGET)
+        defer.returnValue((False, settings.POOL_TARGET))
 
     def register_work(self, worker_name, job_id, difficulty):
         now = Interfaces.timestamper.time()
