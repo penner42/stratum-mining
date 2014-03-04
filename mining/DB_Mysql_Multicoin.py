@@ -210,7 +210,7 @@ class DB_Mysql_Multicoin():
     def get_user(self, id_or_username):
         log.debug("Finding user with id or username of %s", id_or_username)
 
-        user = yield self.fetchone_nb(
+        user = self.fetchone_nb(
             """
             SELECT *
             FROM `pool_worker`
