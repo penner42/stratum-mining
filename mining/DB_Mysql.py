@@ -45,8 +45,9 @@ class DB_Mysql():
     def executemany(self, query, args=None):
         try:
             self.dbc.executemany(query, args)
-        except MySQLdb.OperationalError:
+        except MySQLdb.OperationalError as e:
             log.debug("MySQL connection lost during executemany, attempting reconnect")
+            log.debug("Exception: %s" % str(e))
             self.connect()
             self.dbc = self.dbh.cursor()
             
