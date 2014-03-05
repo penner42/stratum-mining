@@ -90,8 +90,6 @@ class MiningService(GenericService):
         session = self.connection_ref().get_session()
         session.setdefault('authorized', {})
 
-        log.info("********************************************************************* %s" % str(Interfaces.worker_manager.test()))
-
         if Interfaces.worker_manager.authorize(worker_name, worker_password):
             session['authorized'][worker_name] = worker_password
             is_ext_diff = False

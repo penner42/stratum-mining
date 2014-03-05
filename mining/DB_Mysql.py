@@ -54,21 +54,8 @@ class DB_Mysql():
         resp = yield self.dbpool.runQuery(query, args)
         defer.returnValue(resp[0])
 
-    @defer.inlineCallbacks
-    def _fetchall(self, query, args=None):
-        try:
-            res = yield self.dbpool.runQuery(query, args)
-            raise MySQLResult(res)
-        except Exception as e:
-            raise
-
     def fetchall(self, query, args=None):
-        try:
-            self._fetchall(query, args)
-        except MySQLResult as e:
-            return e.result
-        except Exception as e:
-            raise
+        return self.dbpool.runQuery(query, args)
 
     def execute(self, query, args=None):
         try:
