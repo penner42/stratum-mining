@@ -30,7 +30,9 @@ class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
         checkin_times = {}
         total_shares = 0
         best_diff = 0
-        
+
+        params = [(v[4], v[6], v[0], v[5], v[9], v[2], v[3], v[11]) for k, v in enumerate(data)]
+        log.debug("************************************************* %s " % params)
         for k, v in enumerate(data):
             # for database compatibility we are converting our_worker to Y/N format
             if v[5]:

@@ -54,7 +54,7 @@ class DB_Mysql():
         resp = yield self.dbpool.runQuery(query, args)
         defer.returnValue(resp[0])
 
-    def fetchall(self, query, args=None):
+    def fetchall_nb(self, query, args=None):
         return self.dbpool.runQuery(query, args)
 
     def execute(self, query, args=None):
