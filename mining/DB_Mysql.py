@@ -97,37 +97,16 @@ class DB_Mysql():
         total_shares = 0
         best_diff = 0
         
-        for k, v in enumerate(data):
-            # for database compatibility we are converting our_worker to Y/N format
-            if v[5]:
-                v[5] = 'Y'
-            else:
-                v[5] = 'N'
-
-            # TODO add saving of coinname to other postgres, sqlite
-            self.execute(
-                """
+        params = [(v[4], v[6], v[0], 'Y' if v[5] else 'N', v[9], v[2], v[3]) for k, v in enumerate(data)]
+        self.executemany("""
                 INSERT INTO `shares`
-                (time, rem_host, username, our_result, 
-                  upstream_result, reason, solution, difficulty, coin_name)
-                VALUES 
-                (FROM_UNIXTIME(%(time)s), %(host)s, 
-                  %(uname)s, 
-                  %(lres)s, 'N', %(reason)s, %(solution)s, %(difficulty)s, %(coinname)s)
+                (time, rem_host, username, our_result,
+                  upstream_result, reason, solution, difficulty)
+                VALUES
+                (FROM_UNIXTIME(%s), %s, %s, %s, 'N', %s, %s, %s)
                 """,
-                {
-                    "time": v[4], 
-                    "host": v[6], 
-                    "uname": v[0], 
-                    "lres": v[5], 
-                    "reason": v[9],
-                    "solution": v[2],
-                    "difficulty": v[3],
-                    "coinname": v[11]
-                }
-            )
-
-            self.dbh.commit()
+                         params)
+        self.dbh.commit()
 
     def found_block(self, data):
         # for database compatibility we are converting our_worker to Y/N format
