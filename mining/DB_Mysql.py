@@ -67,6 +67,8 @@ class DB_Mysql():
             self._fetchall(query, args)
         except MySQLResult as e:
             return e.result
+        except Exception as e:
+            raise
 
     def execute(self, query, args=None):
         try:
