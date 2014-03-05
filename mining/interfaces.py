@@ -44,7 +44,7 @@ class WorkerManagerInterface(object):
         return work_id
 
     def test(self):
-        return dbi.fetchall("SELECT * FROM blocks")
+        return dbi.dbi.fetchall("SELECT * FROM blocks")
 
 class WorkIdGenerator(object):
     counter = 1000
