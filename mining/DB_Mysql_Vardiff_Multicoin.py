@@ -70,7 +70,7 @@ class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
         #         }
         #     )
 
-            self.dbh.commit()
+        self.dbh.commit()
     
     def found_block(self, data):
         # Data layout
