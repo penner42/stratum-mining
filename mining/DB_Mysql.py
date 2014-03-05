@@ -8,7 +8,12 @@ from twisted.internet import defer
 log = lib.logger.get_logger('DB_Mysql')
 
 import MySQLdb
-                
+
+class MySQLResult(Exception):
+    def __init__(self, res):
+        Exception.__init__(self)
+        self.result = res
+
 class DB_Mysql():
     def __init__(self):
         log.debug("Connecting to DB")
@@ -46,9 +51,19 @@ class DB_Mysql():
 
     @defer.inlineCallbacks
     def fetchone_nb(self, query, args=None):
-        log.debug("ASDFASDFASDF")
         resp = yield self.dbpool.runQuery(query, args)
         defer.returnValue(resp[0])
+
+    @defer.inlineCallbacks
+    def _fetchall(self, query, args=None):
+        res = yield self.dbpool.runQuery(query, args)
+        raise MySQLResult(res)
+
+    def fetchall(self, query, args=None):
+        try:
+            self._fetchall(query, args)
+        except MySQLResult as e:
+            return e.result
 
     def execute(self, query, args=None):
         try:
@@ -121,7 +136,6 @@ class DB_Mysql():
             )
 
             self.dbh.commit()
-
 
     def found_block(self, data):
         # for database compatibility we are converting our_worker to Y/N format

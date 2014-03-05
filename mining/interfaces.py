@@ -43,6 +43,9 @@ class WorkerManagerInterface(object):
         self.job_log.setdefault(worker_name, {})[work_id] = (job_id, difficulty, now)
         return work_id
 
+    def test(self):
+        return dbi.fetchall("SELECT * FROM blocks")
+
 class WorkIdGenerator(object):
     counter = 1000
     
