@@ -96,7 +96,8 @@ class DB_Mysql():
         checkin_times = {}
         total_shares = 0
         best_diff = 0
-        
+
+        # time, ip, worker_name, is_valid, invalid_reason, block_hash, difficulty
         params = [(v[4], v[6], v[0], 'Y' if v[5] else 'N', v[9], v[2], v[3]) for k, v in enumerate(data)]
         self.executemany("""
                 INSERT INTO `shares`
