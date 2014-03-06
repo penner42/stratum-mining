@@ -52,6 +52,9 @@ class DB_Mysql():
     def fetchall_nb(self, query, args=None):
         return self.dbpool.runQuery(query, args)
 
+    def execute_nb(self, query, args=None):
+        self.dbpool.runOperation(query, args)
+
     def execute(self, query, args=None):
         try:
             self.dbc.execute(query, args)

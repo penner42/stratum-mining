@@ -3,8 +3,8 @@ import hashlib
 import lib.settings as settings
 import lib.logger
 log = lib.logger.get_logger('DB_Mysql_Multicoin_Vardiff')
+from twisted.internet import defer
 
-import MySQLdb
 import DB_Mysql
                 
 class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
@@ -43,7 +43,8 @@ class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
                          params)
 
         self.dbh.commit()
-    
+
+    @defer.inlineCallbacks
     def found_block(self, data):
         # Data layout
         # 0: worker_name,
@@ -67,8 +68,7 @@ class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
 
         # Check for the share in the database before updating it
         # Note: We can't use DUPLICATE KEY because solution is not a key
-
-        self.execute(
+        shareid = yield self.fetchone_nb(
             """
             Select `id` from `shares`
             WHERE `solution` = %(solution)s
@@ -79,11 +79,9 @@ class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
             }
         )
 
-        shareid = self.dbc.fetchone()
-
         if shareid and shareid[0] > 0:
             # Note: difficulty = -1 here
-            self.execute(
+            self.execute_nb(
                 """
                 UPDATE `shares`
                 SET `upstream_result` = %(result)s, `is_block_solution` = 'Y'
@@ -97,10 +95,8 @@ class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
                     "id": shareid[0]
                 }
             )
-            
-            self.dbh.commit()
         else:
-            self.execute(
+            self.execute_nb(
                 """
                 INSERT INTO `shares`
                 (time, rem_host, username, our_result, 
@@ -120,7 +116,6 @@ class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
                     "coinname": data[10]
                 }
             )
-            self.dbh.commit()
         log.debug("############ end found_block #############")
 
     def update_worker_diff(self, username, diff):
