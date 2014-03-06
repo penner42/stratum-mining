@@ -47,7 +47,10 @@ class DB_Mysql():
     @defer.inlineCallbacks
     def fetchone_nb(self, query, args=None):
         resp = yield self.dbpool.runQuery(query, args)
-        defer.returnValue(resp[0])
+        if len(resp) > 0:
+            defer.returnValue(resp[0])
+        else:
+            defer.returnValue(None)
 
     def fetchall_nb(self, query, args=None):
         return self.dbpool.runQuery(query, args)

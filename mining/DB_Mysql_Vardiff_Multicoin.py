@@ -79,7 +79,7 @@ class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
             }
         )
 
-        if shareid and shareid[0] > 0:
+        if shareid is not None and shareid[0] > 0:
             # Note: difficulty = -1 here
             self.execute_nb(
                 """
