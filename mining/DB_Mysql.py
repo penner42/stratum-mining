@@ -67,7 +67,7 @@ class DB_Mysql():
         return None
 
     def executemany(self, query, args=None):
-        self.dbpool.runInteraction(_executemany, query, args)
+        self.dbpool.runInteraction(self._executemany, query, args)
         # try:
         #     self.dbc.executemany(query, args)
         # except MySQLdb.OperationalError:
