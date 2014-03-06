@@ -60,7 +60,6 @@ class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
         # for database compatibility we are converting our_worker to Y/N format
         log.debug("############ IN found_block #############")
         # import share queue
-        yield self.do_import(self.dbi, True)  # We can't Update if the record is not there.
 
         if data[5]:
             data[5] = 'Y'
