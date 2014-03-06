@@ -316,8 +316,8 @@ class TemplateRegistry(object):
             #just try both block hash and scrypt hash when checking for block creation
             on_submit = self.bitcoin_rpc.submitblock(serialized, block_hash_hex, scrypt_hash_hex)
 
-            if on_submit:
-                self.update_block()
+#            if on_submit:
+#                self.update_block()
 
             if settings.SOLUTION_BLOCK_HASH:
                 return (header_hex, block_hash_hex, share_diff, on_submit)
