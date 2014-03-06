@@ -108,7 +108,7 @@ class DBInterface():
         # Here we are in the thread.
         dbi = self.connectDB()        
         self.do_import(dbi, False)
-        
+
         dbi.close()
 
     def _update_pool_info(self, data):
@@ -206,12 +206,16 @@ class DBInterface():
         defer.returnValue(user)
 
     def get_user(self, id):
+        log.debug("get_user %s" % id)
         if self.cache.get(id) is None:
+            log.debug("%s not in cache" % id)
             user = self.dbi.get_user(id)
-            self.cache.set(id, user)
+            ret = self.cache.set(id, user)
+            log.debug("cache set return: %s" % ret)
         return self.cache.get(id)
 
     def user_exists(self, username):
+        log.debug("user_exists %s" % username)
         if self.cache.get(username) is not None:
             return True
         user = self.dbi.get_user(username)

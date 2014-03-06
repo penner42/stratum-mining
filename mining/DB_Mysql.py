@@ -56,7 +56,7 @@ class DB_Mysql():
         return self.dbpool.runQuery(query, args)
 
     def execute_nb(self, query, args=None):
-        self.dbpool.runOperation(query, args)
+        return self.dbpool.runOperation(query, args)
 
     def execute(self, query, args=None):
         try:
@@ -73,7 +73,7 @@ class DB_Mysql():
         return None
 
     def executemany(self, query, args=None):
-        self.dbpool.runInteraction(self._executemany, query, args)
+        return self.dbpool.runInteraction(self._executemany, query, args)
         # try:
         #     self.dbc.executemany(query, args)
         # except MySQLdb.OperationalError:

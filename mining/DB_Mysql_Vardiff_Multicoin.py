@@ -33,7 +33,7 @@ class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
 
         # time, ip, worker_name, is_valid, invalid_reason, block_hash, difficulty, coin_name
         params = [(v[4], v[6], v[0], 'Y' if v[5] else 'N', v[9], v[2], v[3], v[11]) for k, v in enumerate(data)]
-        self.executemany("""
+        return self.executemany("""
                 INSERT INTO `shares`
                 (time, rem_host, username, our_result,
                   upstream_result, reason, solution, difficulty, coin_name)
@@ -41,8 +41,6 @@ class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
                 (FROM_UNIXTIME(%s), %s, %s, %s, 'N', %s, %s, %s, %s)
                 """,
                          params)
-
-        self.dbh.commit()
 
     @defer.inlineCallbacks
     def found_block(self, data):
@@ -61,6 +59,9 @@ class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
         #
         # for database compatibility we are converting our_worker to Y/N format
         log.debug("############ IN found_block #############")
+        # import share queue
+        yield self.do_import(self.dbi, True)  # We can't Update if the record is not there.
+
         if data[5]:
             data[5] = 'Y'
         else:
