@@ -59,6 +59,7 @@ class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
         # 10: coin_name
         #
         # for database compatibility we are converting our_worker to Y/N format
+        log.debug("############ IN found_block #############")
         if data[5]:
             data[5] = 'Y'
         else:
@@ -120,7 +121,7 @@ class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
                 }
             )
             self.dbh.commit()
-
+        log.debug("############ end found_block #############")
 
     def update_worker_diff(self, username, diff):
         log.debug("Setting difficulty for %s to %s", username, diff)
