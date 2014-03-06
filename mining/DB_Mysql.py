@@ -381,6 +381,7 @@ class DB_Mysql():
 
     def close(self):
         self.dbh.close()
+        self.dbpool.close()
 
     def check_tables(self):
         log.debug("Checking Database")
