@@ -215,10 +215,10 @@ class DBInterface():
         return self.cache.get(id)
 
     def user_exists(self, username):
-        log.debug("user_exists %s" % username)
+        log.debug("user_exists looking for %s" % username)
         if self.cache.get(username) is not None:
             return True
-        user = self.dbi.get_user(username)
+        user = self.get_user(username)
         return user is not None 
 
     def insert_user(self, username, password):        
