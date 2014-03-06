@@ -9,11 +9,6 @@ log = lib.logger.get_logger('DB_Mysql')
 
 import MySQLdb
 
-class MySQLResult(Exception):
-    def __init__(self, res):
-        Exception.__init__(self)
-        self.result = res
-
 class DB_Mysql():
     def __init__(self):
         log.debug("Connecting to DB")
@@ -66,17 +61,22 @@ class DB_Mysql():
             self.dbc = self.dbh.cursor()
             
             self.dbc.execute(query, args)
-            
+
+    def _executemany(self, txn, query, args):
+        txn.executemany(query, args)
+        return None
+
     def executemany(self, query, args=None):
-        try:
-            self.dbc.executemany(query, args)
-        except MySQLdb.OperationalError:
-            log.debug("MySQL connection lost during executemany, attempting reconnect")
-            self.connect()
-            self.dbc = self.dbh.cursor()
-            
-            self.dbc.executemany(query, args)
-    
+        self.dbpool.runInteraction(_executemany, query, args)
+        # try:
+        #     self.dbc.executemany(query, args)
+        # except MySQLdb.OperationalError:
+        #     log.debug("MySQL connection lost during executemany, attempting reconnect")
+        #     self.connect()
+        #     self.dbc = self.dbh.cursor()
+        #
+        #     self.dbc.executemany(query, args)
+
     def import_shares(self, data):
         # Data layout
         # 0: worker_name, 
