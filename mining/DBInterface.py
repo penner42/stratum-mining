@@ -79,7 +79,7 @@ class DBInterface():
 
     def scheduleImport(self):
         # This schedule's the Import
-        if settings.DATABASE_DRIVER == "sqlite":
+        if settings.DATABASE_DRIVER == "sqlite" or settings.DATABASE_DRIVER == "mysql":
             use_thread = False
         else:
             use_thread = True
