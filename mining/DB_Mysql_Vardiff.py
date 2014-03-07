@@ -1,10 +1,8 @@
 import time
-import hashlib
-import lib.settings as settings
 import lib.logger
 log = lib.logger.get_logger('DB_Mysql_Vardiff')
 
-import MySQLdb
+from twisted.internet import defer
 import DB_Mysql
                 
 class DB_Mysql_Vardiff(DB_Mysql.DB_Mysql):
@@ -33,7 +31,7 @@ class DB_Mysql_Vardiff(DB_Mysql.DB_Mysql):
 
         # time, ip, worker_name, is_valid, invalid_reason, block_hash, difficulty
         params = [(v[4], v[6], v[0], 'Y' if v[5] else 'N', v[9], v[2], v[3]) for k, v in enumerate(data)]
-        self.executemany("""
+        return self.executemany("""
                 INSERT INTO `shares`
                 (time, rem_host, username, our_result,
                   upstream_result, reason, solution, difficulty)
@@ -41,8 +39,8 @@ class DB_Mysql_Vardiff(DB_Mysql.DB_Mysql):
                 (FROM_UNIXTIME(%s), %s, %s, %s, 'N', %s, %s, %s)
                 """,
                          params)
-        self.dbh.commit()
-    
+
+    @defer.inlineCallbacks
     def found_block(self, data):
         # Data layout
         # 0: worker_name,
@@ -132,18 +130,16 @@ class DB_Mysql_Vardiff(DB_Mysql.DB_Mysql):
     def clear_worker_diff(self):
         log.debug("Resetting difficulty for all workers")
         
-        self.execute(
+        self.execute_nb(
             """
             UPDATE `pool_worker`
             SET `difficulty` = 0
             """
         )
-        
-        self.dbh.commit()
 
-
+    @defer.inlineCallbacks
     def get_workers_stats(self):
-        self.execute(
+        result = yield self.fetchall_nb(
             """
             SELECT `username`, `speed`, `last_checkin`, `total_shares`,
               `total_rejects`, `total_found`, `alive`, `difficulty`
@@ -153,8 +149,8 @@ class DB_Mysql_Vardiff(DB_Mysql.DB_Mysql):
         )
         
         ret = {}
-        
-        for data in self.dbc.fetchall():
+
+        for data in result:
             ret[data[0]] = {
                 "username": data[0],
                 "speed": int(data[1]),
@@ -166,6 +162,6 @@ class DB_Mysql_Vardiff(DB_Mysql.DB_Mysql):
                 "difficulty": float(data[7])
             }
             
-        return ret
+        defer.returnValue(ret)
 
 

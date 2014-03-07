@@ -194,8 +194,8 @@ class DBInterface():
         log.info("Authentication for %s failed" % username)
         defer.returnValue(False)
     
-    def list_users(self):
-        return self.dbi.list_users()
+    # def list_users(self):
+    #     return self.dbi.list_users()
 
     @defer.inlineCallbacks
     def get_user_nb(self, id):

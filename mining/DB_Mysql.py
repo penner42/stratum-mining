@@ -25,16 +25,6 @@ class DB_Mysql():
         self.connect()
         
     def connect(self):
-        self.dbh = MySQLdb.connect(
-            getattr(settings, 'DB_MYSQL_HOST'), 
-            getattr(settings, 'DB_MYSQL_USER'),
-            getattr(settings, 'DB_MYSQL_PASS'), 
-            getattr(settings, 'DB_MYSQL_DBNAME'),
-            getattr(settings, 'DB_MYSQL_PORT')
-        )
-        self.dbc = self.dbh.cursor()
-        self.dbh.autocommit(True)
-
         self.dbpool = adbapi.ConnectionPool(
             "MySQLdb",
             getattr(settings, 'DB_MYSQL_HOST'),
@@ -57,16 +47,6 @@ class DB_Mysql():
 
     def execute_nb(self, query, args=None):
         return self.dbpool.runOperation(query, args)
-
-    def execute(self, query, args=None):
-        try:
-            self.dbc.execute(query, args)
-        except MySQLdb.OperationalError:
-            log.debug("MySQL connection lost during execute, attempting reconnect")
-            self.connect()
-            self.dbc = self.dbh.cursor()
-            
-            self.dbc.execute(query, args)
 
     def _executemany(self, txn, query, args):
         txn.executemany(query, args)
@@ -167,22 +147,22 @@ class DB_Mysql():
                 }
             )
 
-    def list_users(self):
-        self.execute(
-            """
-            SELECT *
-            FROM `pool_worker`
-            WHERE `id`> 0
-            """
-        )
-        
-        while True:
-            results = self.dbc.fetchmany()
-            if not results:
-                break
-            
-            for result in results:
-                yield result
+    # def list_users(self):
+    #     self.execute(
+    #         """
+    #         SELECT *
+    #         FROM `pool_worker`
+    #         WHERE `id`> 0
+    #         """
+    #     )
+    #
+    #     while True:
+    #         results = self.dbc.fetchmany()
+    #         if not results:
+    #             break
+    #
+    #         for result in results:
+    #             yield result
                 
 
     def get_user_nb(self, id_or_username):
@@ -233,8 +213,7 @@ class DB_Mysql():
     def insert_worker(self, account_id, username, password):
         log.debug("Adding new worker %s", username)
         query = "INSERT INTO pool_worker"
-        self.execute(query + '(account_id, username, password) VALUES (%s, %s, %s);', (account_id, username, password))
-        self.dbh.commit()
+        self.execute_nb(query + '(account_id, username, password) VALUES (%s, %s, %s);', (account_id, username, password))
         return str(username)
         
 
@@ -244,7 +223,7 @@ class DB_Mysql():
         
         log.debug("Deleting user with id or username of %s", id_or_username)
         
-        self.execute(
+        self.execute_nb(
             """
             UPDATE `shares`
             SET `username` = 0
@@ -256,7 +235,7 @@ class DB_Mysql():
             }
         )
         
-        self.execute(
+        self.execute_nb(
             """
             DELETE FROM `pool_worker`
             WHERE `id` = %(id)s
@@ -267,13 +246,11 @@ class DB_Mysql():
                 "uname": id_or_username
             }
         )
-        
-        self.dbh.commit()
 
     def insert_user(self, username, password):
         log.debug("Adding new user %s", username)
         
-        self.execute(
+        self.execute_nb(
             """
             INSERT INTO `pool_worker`
             (`username`, `password`)
@@ -285,15 +262,12 @@ class DB_Mysql():
                 "pass": password
             }
         )
-        
-        self.dbh.commit()
-        
         return str(username)
 
     def update_user(self, id_or_username, password):
         log.debug("Updating password for user %s", id_or_username);
         
-        self.execute(
+        self.execute_nb(
             """
             UPDATE `pool_worker`
             SET `password` = %(pass)s
@@ -306,8 +280,6 @@ class DB_Mysql():
                 "pass": password
             }
         )
-        
-        self.dbh.commit()
 
     @defer.inlineCallbacks
     def check_password(self, username, password):
@@ -331,8 +303,9 @@ class DB_Mysql():
         
         defer.returnValue(False)
 
+    @defer.inlineCallbacks
     def get_workers_stats(self):
-        self.execute(
+        result = yield self.fetchall_nb(
             """
             SELECT `username`, `speed`, `last_checkin`, `total_shares`,
               `total_rejects`, `total_found`, `alive`
@@ -343,7 +316,7 @@ class DB_Mysql():
         
         ret = {}
         
-        for data in self.dbc.fetchall():
+        for data in result:
             ret[data[0]] = {
                 "username": data[0],
                 "speed": int(data[1]),
@@ -354,23 +327,16 @@ class DB_Mysql():
                 "alive": True if data[6] is 1 else False,
             }
             
-        return ret
-
-    def insert_worker(self, account_id, username, password):
-        log.debug("Adding new worker %s", username)
-        query = "INSERT INTO pool_worker"
-        self.execute(query + '(account_id, username, password) VALUES (%s, %s, %s);', (account_id, username, password))
-        self.dbh.commit()
-        return str(username)
+        defer.returnValue(ret)
 
     def close(self):
-        self.dbh.close()
         self.dbpool.close()
 
+    @defer.inlineCallbacks
     def check_tables(self):
         log.debug("Checking Database")
         
-        self.execute(
+        data = yield self.fetchone_nb(
             """
             SELECT COUNT(*)
             FROM INFORMATION_SCHEMA.STATISTICS
@@ -381,10 +347,6 @@ class DB_Mysql():
                 "schema": getattr(settings, 'DB_MYSQL_DBNAME')
             }
         )
-        
-        data = self.dbc.fetchone()
-        
-        if data[0] <= 0:
-           raise Exception("There is no shares table. Have you imported the schema?")
- 
 
+        if data[0] <= 0:
+            raise Exception("There is no shares table. Have you imported the schema?")

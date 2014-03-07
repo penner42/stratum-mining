@@ -1,6 +1,4 @@
 import time
-import hashlib
-import lib.settings as settings
 import lib.logger
 log = lib.logger.get_logger('DB_Mysql_Multicoin_Vardiff')
 from twisted.internet import defer
@@ -136,18 +134,16 @@ class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
     def clear_worker_diff(self):
         log.debug("Resetting difficulty for all workers")
         
-        self.execute(
+        self.execute_nb(
             """
             UPDATE `pool_worker`
             SET `difficulty` = 0
             """
         )
-        
-        self.dbh.commit()
 
-
+    @defer.inlineCallbacks
     def get_workers_stats(self):
-        self.execute(
+        result = yield self.fetchall_nb(
             """
             SELECT `username`, `speed`, `last_checkin`, `total_shares`,
               `total_rejects`, `total_found`, `alive`, `difficulty`
@@ -158,7 +154,7 @@ class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
         
         ret = {}
         
-        for data in self.dbc.fetchall():
+        for data in result:
             ret[data[0]] = {
                 "username": data[0],
                 "speed": int(data[1]),
@@ -170,6 +166,6 @@ class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
                 "difficulty": float(data[7])
             }
             
-        return ret
+        defer.returnValue(ret)
 
 
