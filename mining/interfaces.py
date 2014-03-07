@@ -198,7 +198,9 @@ class Interfaces(object):
             log.info("Did not find submitblock")
         else:
             log.info("unknown submitblock result")
-            
+
+        # force block update
+        cls.template_registry.update_in_progress = False
         (yield cls.template_registry.update_block())
         log.info("New litecoind connection changed %s:%s" % (host, port))
-            
+

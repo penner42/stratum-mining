@@ -74,14 +74,6 @@ class DB_Mysql():
 
     def executemany(self, query, args=None):
         return self.dbpool.runInteraction(self._executemany, query, args)
-        # try:
-        #     self.dbc.executemany(query, args)
-        # except MySQLdb.OperationalError:
-        #     log.debug("MySQL connection lost during executemany, attempting reconnect")
-        #     self.connect()
-        #     self.dbc = self.dbh.cursor()
-        #
-        #     self.dbc.executemany(query, args)
 
     def import_shares(self, data):
         # Data layout
@@ -113,7 +105,6 @@ class DB_Mysql():
                 (FROM_UNIXTIME(%s), %s, %s, %s, 'N', %s, %s, %s)
                 """,
                          params)
-        self.dbh.commit()
 
     def found_block(self, data):
         # for database compatibility we are converting our_worker to Y/N format
