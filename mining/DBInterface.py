@@ -108,7 +108,6 @@ class DBInterface():
         # Here we are in the thread.
         dbi = self.connectDB()        
         self.do_import(dbi, False)
-
         dbi.close()
 
     def _update_pool_info(self, data):
@@ -181,11 +180,11 @@ class DBInterface():
             defer.returnValue(True)
         elif self.cache.get(username) == password:
             defer.returnValue(True)
-        elif (yield self.dbi.check_password(username, password)):
+        elif (yield defer.maybeDeferred(self.dbi.check_password(username, password))):
             self.cache.set(username, password)
             defer.returnValue(True)
         elif settings.USERS_AUTOADD == True:
-            uid = yield self.dbi.get_uid(username)
+            uid = yield defer.maybeDeferred(self.dbi.get_uid(username))
             if uid != False:
                 self.dbi.insert_worker(uid, username, password)
                 self.cache.set(username, password)
@@ -200,7 +199,7 @@ class DBInterface():
     @defer.inlineCallbacks
     def get_user_nb(self, id):
         if self.cache.get(id) is None:
-            user = yield self.dbi.get_user_nb(id)
+            user = yield defer.maybeDeferred(self.dbi.get_user_nb(id))
             self.cache.set(id, user)
         user = self.cache.get(id)
         log.debug("BLAHBLAH %s" % str(user))
@@ -211,7 +210,7 @@ class DBInterface():
         log.debug("get_user %s" % id)
         if self.cache.get(id) is None:
             log.debug("%s not in cache" % id)
-            user = yield self.dbi.get_user(id)
+            user = yield defer.maybeDeferred(self.dbi.get_user(id))
             ret = self.cache.set(id, user)
             log.debug("cache set return: %s" % ret)
         defer.returnValue(self.cache.get(id))
