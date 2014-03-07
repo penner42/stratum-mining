@@ -161,37 +161,38 @@ class DBInterface():
         except Exception as e:
             log.error("Update Found Block Share Record Failed: %s", e.args[0])
 
+    @defer.inlineCallbacks
     def check_password(self, username, password):
         if username == "":
             log.info("Rejected worker for blank username")
-            return False
+            defer.returnValue(False)
         allowed_chars = Set('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-.')
         if Set(username).issubset(allowed_chars) != True:
             log.info("Username contains bad arguments")
-            return False
+            defer.returnValue(False)
         if username.count('.') > 1:
             log.info("Username contains multiple . ")
-            return False
+            defer.returnValue(False)
         
         # Force username and password to be strings
         username = str(username)
         password = str(password)
         if not settings.USERS_CHECK_PASSWORD and self.user_exists(username): 
-            return True
+            defer.returnValue(True)
         elif self.cache.get(username) == password:
-            return True
-        elif self.dbi.check_password(username, password):
+            defer.returnValue(True)
+        elif (yield self.dbi.check_password(username, password)):
             self.cache.set(username, password)
-            return True
+            defer.returnValue(True)
         elif settings.USERS_AUTOADD == True:
-            if self.dbi.get_uid(username) != False:
-                uid = self.dbi.get_uid(username)
+            uid = yield self.dbi.get_uid(username)
+            if uid != False:
                 self.dbi.insert_worker(uid, username, password)
                 self.cache.set(username, password)
-                return True
+                defer.returnValue(True)
         
         log.info("Authentication for %s failed" % username)
-        return False
+        defer.returnValue(False)
     
     def list_users(self):
         return self.dbi.list_users()

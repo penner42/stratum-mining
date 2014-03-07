@@ -90,7 +90,7 @@ class MiningService(GenericService):
         session = self.connection_ref().get_session()
         session.setdefault('authorized', {})
 
-        if Interfaces.worker_manager.authorize(worker_name, worker_password):
+        if (yield Interfaces.worker_manager.authorize(worker_name, worker_password)):
             session['authorized'][worker_name] = worker_password
             is_ext_diff = False
             if settings.ALLOW_EXTERNAL_DIFFICULTY:
@@ -122,7 +122,8 @@ class MiningService(GenericService):
         session['extranonce1'] = extranonce1
         session['difficulty'] = settings.POOL_TARGET  # Following protocol specs, default diff is 1
         return Pubsub.subscribe(self.connection_ref(), MiningSubscription()) + (extranonce1_hex, extranonce2_size)
-        
+
+    @defer.inlineCallbacks
     def submit(self, worker_name, work_id, extranonce2, ntime, nonce):
         '''Try to solve block candidate using given parameters.'''
         
@@ -131,7 +132,8 @@ class MiningService(GenericService):
         
         # Check if worker is authorized to submit shares
         ip = self.connection_ref()._get_ip()
-        if not Interfaces.worker_manager.authorize(worker_name, session['authorized'].get(worker_name)):
+        authorized = yield Interfaces.worker_manager.authorize(worker_name, session['authorized'].get(worker_name))
+        if not authorized:
             log.info("Worker is not authorized: IP %s", str(ip))
             raise SubmitException("Worker is not authorized")
 
@@ -213,7 +215,7 @@ class MiningService(GenericService):
             Interfaces.share_manager.on_submit_share(worker_name, block_header,
                                                      block_hash, difficulty, submit_time, True, ip, '', share_diff)
 
-        return True
+        defer.returnValue(True)
             
     # Service documentation for remote discovery
     update_block.help_text = "Notify Stratum server about new block on the network."

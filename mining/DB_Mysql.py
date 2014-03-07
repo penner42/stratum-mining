@@ -228,17 +228,17 @@ class DB_Mysql():
         user = self.dbc.fetchone()
         return user
 
+    @defer.inlineCallbacks
     def get_uid(self, id_or_username):
         log.debug("Finding user id of %s", id_or_username)
         uname = id_or_username.split(".", 1)[0]
-        self.execute("SELECT `id` FROM `accounts` where username = %s", (uname))
-        row = self.dbc.fetchone()
+        row = yield self.execute_nb("SELECT `id` FROM `accounts` where username = %s", (uname))
 
         if row is None:
-            return False
+            defer.returnValue(False)
         else:
             uid = row[0]
-            return uid
+            defer.returnValue(uid)
 
     def insert_worker(self, account_id, username, password):
         log.debug("Adding new worker %s", username)
@@ -319,10 +319,11 @@ class DB_Mysql():
         
         self.dbh.commit()
 
+    @defer.inlineCallbacks
     def check_password(self, username, password):
         log.debug("Checking username/password for %s", username)
         
-        self.execute(
+        data = yield self.execute_nb(
             """
             SELECT COUNT(*) 
             FROM `pool_worker`
@@ -335,11 +336,10 @@ class DB_Mysql():
             }
         )
         
-        data = self.dbc.fetchone()
         if data[0] > 0:
-            return True
+            defer.returnValue(True)
         
-        return False
+        defer.returnValue(False)
 
     def get_workers_stats(self):
         self.execute(
