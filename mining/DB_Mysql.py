@@ -205,7 +205,7 @@ class DB_Mysql():
     def get_user(self, id_or_username):
         log.debug("Finding user with id or username of %s", id_or_username)
 
-        self.execute(
+        return self.fetchone_nb(
             """
             SELECT *
             FROM `pool_worker`
@@ -217,9 +217,6 @@ class DB_Mysql():
                 "uname": id_or_username
             }
         )
-
-        user = self.dbc.fetchone()
-        return user
 
     @defer.inlineCallbacks
     def get_uid(self, id_or_username):

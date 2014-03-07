@@ -177,7 +177,7 @@ class DBInterface():
         # Force username and password to be strings
         username = str(username)
         password = str(password)
-        if not settings.USERS_CHECK_PASSWORD and self.user_exists(username): 
+        if not settings.USERS_CHECK_PASSWORD and (yield self.user_exists(username)):
             defer.returnValue(True)
         elif self.cache.get(username) == password:
             defer.returnValue(True)
@@ -206,21 +206,23 @@ class DBInterface():
         log.debug("BLAHBLAH %s" % str(user))
         defer.returnValue(user)
 
+    @defer.inlineCallbacks
     def get_user(self, id):
         log.debug("get_user %s" % id)
         if self.cache.get(id) is None:
             log.debug("%s not in cache" % id)
-            user = self.dbi.get_user(id)
+            user = yield self.dbi.get_user(id)
             ret = self.cache.set(id, user)
             log.debug("cache set return: %s" % ret)
-        return self.cache.get(id)
+        defer.returnValue(self.cache.get(id))
 
+    @defer.inlineCallbacks
     def user_exists(self, username):
         log.debug("user_exists looking for %s" % username)
         if self.cache.get(username) is not None:
-            return True
-        user = self.get_user(username)
-        return user is not None 
+            defer.returnValue(True)
+        user = yield self.get_user(username)
+        defer.returnValue(user is not None)
 
     def insert_user(self, username, password):        
         return self.dbi.insert_user(username, password)
