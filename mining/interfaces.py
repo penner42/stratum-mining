@@ -22,7 +22,7 @@ class WorkerManagerInterface(object):
         self.job_log = {}
         self.job_log.setdefault('None', {})
         return
-        
+
     def authorize(self, worker_name, worker_password):
         # Important NOTE: This is called on EVERY submitted share. So you'll need caching!!!
         return dbi.check_password(worker_name, worker_password)
@@ -199,8 +199,5 @@ class Interfaces(object):
         else:
             log.info("unknown submitblock result")
 
-        # force block update
-        cls.template_registry.update_in_progress = False
-        (yield cls.template_registry.update_block())
         log.info("New litecoind connection changed %s:%s" % (host, port))
 
