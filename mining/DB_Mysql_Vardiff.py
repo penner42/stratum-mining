@@ -66,7 +66,7 @@ class DB_Mysql_Vardiff(DB_Mysql.DB_Mysql):
         # Check for the share in the database before updating it
         # Note: We can't use DUPLICATE KEY because solution is not a key
 
-        self.execute(
+        shareid = yield self.fetchone_nb(
             """
             Select `id` from `shares`
             WHERE `solution` = %(solution)s
@@ -77,11 +77,9 @@ class DB_Mysql_Vardiff(DB_Mysql.DB_Mysql):
             }
         )
 
-        shareid = self.dbc.fetchone()
-
         if shareid and shareid[0] > 0:
             # Note: difficulty = -1 here
-            self.execute(
+            self.execute_nb(
                 """
                 UPDATE `shares`
                 SET `upstream_result` = %(result)s
@@ -95,10 +93,8 @@ class DB_Mysql_Vardiff(DB_Mysql.DB_Mysql):
                     "id": shareid[0]
                 }
             )
-            
-            self.dbh.commit()
         else:
-            self.execute(
+            self.execute_nb(
                 """
                 INSERT INTO `shares`
                 (time, rem_host, username, our_result, 
@@ -117,13 +113,11 @@ class DB_Mysql_Vardiff(DB_Mysql.DB_Mysql):
                     "solution": data[2],
                 }
             )
-            self.dbh.commit()
-
 
     def update_worker_diff(self, username, diff):
         log.debug("Setting difficulty for %s to %s", username, diff)
         
-        self.execute(
+        self.execute_nb(
             """
             UPDATE `pool_worker`
             SET `difficulty` = %(diff)s
@@ -134,9 +128,7 @@ class DB_Mysql_Vardiff(DB_Mysql.DB_Mysql):
                 "diff": diff
             }
         )
-        
-        self.dbh.commit()
-    
+
     def clear_worker_diff(self):
         log.debug("Resetting difficulty for all workers")
         

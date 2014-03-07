@@ -106,6 +106,7 @@ class DB_Mysql():
                 """,
                          params)
 
+    @defer.inlineCallbacks
     def found_block(self, data):
         # for database compatibility we are converting our_worker to Y/N format
         if data[5]:
@@ -115,8 +116,7 @@ class DB_Mysql():
 
         # Check for the share in the database before updating it
         # Note: We can't use DUPLICATE KEY because solution is not a key
-
-        self.execute(
+        shareid = yield self.fetchone_nb(
             """
             Select `id` from `shares`
             WHERE `solution` = %(solution)s
@@ -127,11 +127,9 @@ class DB_Mysql():
             }
         )
 
-        shareid = self.dbc.fetchone()
-
         if shareid and shareid[0] > 0:
             # Note: difficulty = -1 here
-            self.execute(
+            self.execute_nb(
                 """
                 UPDATE `shares`
                 SET `upstream_result` = %(result)s,
@@ -146,11 +144,9 @@ class DB_Mysql():
                     "id": shareid[0]
                 }
             )
-            
-            self.dbh.commit()
         else:
             #TODO add is_block_solution to postgres, sqlite
-            self.execute(
+            self.execute_nb(
                 """
                 INSERT INTO `shares`
                 (time, rem_host, username, our_result, 
@@ -171,9 +167,6 @@ class DB_Mysql():
                 }
             )
 
-            self.dbh.commit()
-
-        
     def list_users(self):
         self.execute(
             """
@@ -232,7 +225,7 @@ class DB_Mysql():
     def get_uid(self, id_or_username):
         log.debug("Finding user id of %s", id_or_username)
         uname = id_or_username.split(".", 1)[0]
-        row = yield self.execute_nb("SELECT `id` FROM `accounts` where username = %s", (uname))
+        row = yield self.fetchone_nb("SELECT `id` FROM `accounts` where username = %s", (uname))
 
         if row is None:
             defer.returnValue(False)
@@ -323,7 +316,7 @@ class DB_Mysql():
     def check_password(self, username, password):
         log.debug("Checking username/password for %s", username)
         
-        data = yield self.execute_nb(
+        data = yield self.fetchone_nb(
             """
             SELECT COUNT(*) 
             FROM `pool_worker`

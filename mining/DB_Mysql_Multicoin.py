@@ -132,7 +132,7 @@ class DB_Mysql_Multicoin():
         # Check for the share in the database before updating it
         # Note: We can't use DUPLICATE KEY because solution is not a key
 
-        self.execute(
+        shareid = yield self.fetchone_nb(
             """
             Select `id` from `shares`
             WHERE `solution` = %(solution)s
@@ -142,8 +142,6 @@ class DB_Mysql_Multicoin():
                 "solution": data[2]
             }
         )
-
-        shareid = self.dbc.fetchone()
 
         if shareid and shareid[0] > 0:
             # Note: difficulty = -1 here

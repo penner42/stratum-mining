@@ -121,7 +121,7 @@ class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
     def update_worker_diff(self, username, diff):
         log.debug("Setting difficulty for %s to %s", username, diff)
         
-        self.execute(
+        self.execute_nb(
             """
             UPDATE `pool_worker`
             SET `difficulty` = %(diff)s
@@ -132,9 +132,7 @@ class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
                 "diff": diff
             }
         )
-        
-        self.dbh.commit()
-    
+
     def clear_worker_diff(self):
         log.debug("Resetting difficulty for all workers")
         
