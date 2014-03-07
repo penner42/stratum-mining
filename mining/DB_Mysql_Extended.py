@@ -22,9 +22,9 @@ class DB_Mysql_Extended(DB_Mysql.DB_Mysql):
             SET `speed` = 0, 
               `alive` = 0
             """
-        );
+        )
         
-        stime = '%.0f' % (time.time() - averageOverTime);
+        stime = '%.0f' % (time.time() - averageOverTime)
         
         self.execute_nb(
             """
