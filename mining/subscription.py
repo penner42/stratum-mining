@@ -17,7 +17,8 @@ class MiningSubscription(Subscription):
            new block which we have to broadcast clients.'''
         
         start = Interfaces.timestamper.time()
-        clean_jobs = is_new_block
+        # TODO don't clean jobs on every update; testing if this solves submitting old work problem
+        clean_jobs = True
         
         (job_id, prevhash, coinb1, coinb2, merkle_branch, version, nbits, ntime, _) = \
             Interfaces.template_registry.get_last_broadcast_args()

@@ -20,9 +20,9 @@ class BitcoinRPC(object):
         self.headers = {
             'Content-Type': 'text/json',
             'Authorization': 'Basic %s' % self.credentials,
-        }
+            }
         self.has_submitblock = None
-	client.HTTPClientFactory.noisy = False
+        client.HTTPClientFactory.noisy = False
         
     def _call_raw(self, data):
         client.Headers
@@ -50,10 +50,10 @@ class BitcoinRPC(object):
             self.has_submitblock = None
 
         except Exception as e:
-            if (str(e) == "404 Not Found"):
+            if str(e) == "404 Not Found":
                 log.debug("No submitblock detected.")
                 self.has_submitblock = False
-            elif (str(e) == "500 Internal Server Error"):
+            elif str(e) == "500 Internal Server Error":
                 log.debug("submitblock detected.")
                 self.has_submitblock = True
             else:
@@ -117,7 +117,7 @@ class BitcoinRPC(object):
                         else:
                             continue
 
-        if json.loads(resp)['result'] == None:
+        if json.loads(resp)['result'] is None:
             # make sure the block was created. 
             defer.returnValue((yield self.blockexists(hash_hex, scrypt_hex)))
         else:
