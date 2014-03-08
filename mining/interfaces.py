@@ -156,7 +156,7 @@ class Interfaces(object):
     def changeCoin(cls, host, port, user, password, address, powpos, txcomments):
 
         settings.COINDAEMON_TRUSTED_HOST = str(host)
-        settings.COINDAEMON_TRUSTED_PORT = str(port)
+        settings.COINDAEMON_TRUSTED_PORT = port
         settings.COINDAEMON_TRUSTED_USER = str(user)
         settings.COINDAEMON_TRUSTED_PASSWORD = str(password)
         settings.CENTRAL_WALLET = str(address)
