@@ -32,9 +32,11 @@ class MiningSubscription(Subscription):
                         worker_name = session['authorized'].keys()[0]
                         difficulty = session['difficulty']
                         work_id = Interfaces.worker_manager.register_work(worker_name, job_id, difficulty)             
-                        subscription.emit_single(work_id, prevhash, coinb1, coinb2, merkle_branch, version, nbits, ntime, clean_jobs)
+                        subscription.emit_single(work_id, prevhash, coinb1, coinb2, merkle_branch, version, nbits,
+                                                 ntime, clean_jobs)
                     else:
-                        subscription.emit_single(job_id, prevhash, coinb1, coinb2, merkle_branch, version, nbits, ntime, clean_jobs)
+                        subscription.emit_single(job_id, prevhash, coinb1, coinb2, merkle_branch, version, nbits,
+                                                 ntime, clean_jobs)
             except Exception as e:
                 log.exception("Error broadcasting work to client %s" % str(e))
                 pass

@@ -162,7 +162,7 @@ class TemplateRegistry(object):
                 
         template = self.block_template_class(Interfaces.timestamper, self.coinbaser, JobIdGenerator.get_new_id())
         log.info(template.fill_from_rpc(data))
-        self.add_template(template,data['height'])
+        self.add_template(template, data['height'])
 
         log.info("Update finished, %.03f sec, %d txes" % \
                     (Interfaces.timestamper.time() - start, len(template.vtx)))
