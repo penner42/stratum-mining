@@ -226,6 +226,7 @@ class Interfaces(object):
         # mechanism is not working properly
         Interfaces.set_block_updater(BlockUpdater(registry, bitcoin_rpc))
 
+        # force block update?
+        Interfaces.template_registry.update_block(True)
 
         log.info("New litecoind connection changed %s:%s" % (host, port))
-

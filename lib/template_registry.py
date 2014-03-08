@@ -96,14 +96,14 @@ class TemplateRegistry(object):
         log.debug("Getting Last Template")
         return self.last_block.broadcast_args
         
-    def add_template(self, block,block_height):
+    def add_template(self, block,block_height, force):
         '''Adds new template to the registry.
         It also clean up templates which should
         not be used anymore.'''
         
         prevhash = block.prevhash_hex
 
-        if prevhash in self.prevhashes.keys():
+        if prevhash in self.prevhashes.keys() and not force:
             new_block = False
         else:
             new_block = True
@@ -137,7 +137,7 @@ class TemplateRegistry(object):
         #from twisted.internet import reactor
         #reactor.callLater(10, self.on_block_callback, new_block) 
               
-    def update_block(self):
+    def update_block(self, force = False):
         '''Registry calls the getblocktemplate() RPC
         and build new block template.'''
         
@@ -150,19 +150,19 @@ class TemplateRegistry(object):
         self.last_update = Interfaces.timestamper.time()
         
         d = self.bitcoin_rpc.getblocktemplate()
-        d.addCallback(self._update_block)
+        d.addCallback(self._update_block, force)
         d.addErrback(self._update_block_failed)
         
     def _update_block_failed(self, failure):
         log.error(str(failure))
         self.update_in_progress = False
         
-    def _update_block(self, data):
+    def _update_block(self, data, force):
         start = Interfaces.timestamper.time()
                 
         template = self.block_template_class(Interfaces.timestamper, self.coinbaser, JobIdGenerator.get_new_id())
         log.info(template.fill_from_rpc(data))
-        self.add_template(template, data['height'])
+        self.add_template(template, data['height'], force)
 
         log.info("Update finished, %.03f sec, %d txes" % \
                     (Interfaces.timestamper.time() - start, len(template.vtx)))
@@ -171,6 +171,7 @@ class TemplateRegistry(object):
         return data
     
     def diff_to_target(self, difficulty):
+        '''Converts difficulty to target'''
         '''Converts difficulty to target'''
         if settings.COINDAEMON_ALGO == 'scrypt' or 'scrypt-jane':
             diff1 = 0x0000ffff00000000000000000000000000000000000000000000000000000000
