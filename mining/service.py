@@ -82,24 +82,25 @@ class MiningService(GenericService):
         settings.setup()
         log.info("Updated Config")
         return True
-        
+
+    @defer.inlineCallbacks
     def authorize(self, worker_name, worker_password):
         '''Let authorize worker on this connection.'''
         
         session = self.connection_ref().get_session()
         session.setdefault('authorized', {})
-        
-        if Interfaces.worker_manager.authorize(worker_name, worker_password):
+
+        if (yield Interfaces.worker_manager.authorize(worker_name, worker_password)):
             session['authorized'][worker_name] = worker_password
             is_ext_diff = False
             if settings.ALLOW_EXTERNAL_DIFFICULTY:
-                (is_ext_diff, session['difficulty']) = Interfaces.worker_manager.get_user_difficulty(worker_name)
+                (is_ext_diff, session['difficulty']) = yield Interfaces.worker_manager.get_user_difficulty(worker_name)
                 self.connection_ref().rpc('mining.set_difficulty', [session['difficulty'], ], is_notification=True)
             else:
                 session['difficulty'] = settings.POOL_TARGET
             # worker_log = (valid, invalid, is_banned, diff, is_ext_diff, timestamp)
             Interfaces.worker_manager.worker_log['authorized'][worker_name] = (0, 0, False, session['difficulty'], is_ext_diff, Interfaces.timestamper.time())            
-            return True
+            defer.returnValue(True)
         else:
             ip = self.connection_ref()._get_ip()
             log.info("Failed worker authorization: IP %s", str(ip))
@@ -107,7 +108,7 @@ class MiningService(GenericService):
                 del session['authorized'][worker_name]
             if worker_name in Interfaces.worker_manager.worker_log['authorized']:
                 del Interfaces.worker_manager.worker_log['authorized'][worker_name]
-            return False
+            defer.returnValue(False)
         
     def subscribe(self, *args):
         '''Subscribe for receiving mining jobs. This will
@@ -121,7 +122,8 @@ class MiningService(GenericService):
         session['extranonce1'] = extranonce1
         session['difficulty'] = settings.POOL_TARGET  # Following protocol specs, default diff is 1
         return Pubsub.subscribe(self.connection_ref(), MiningSubscription()) + (extranonce1_hex, extranonce2_size)
-        
+
+    @defer.inlineCallbacks
     def submit(self, worker_name, work_id, extranonce2, ntime, nonce):
         '''Try to solve block candidate using given parameters.'''
         
@@ -130,7 +132,8 @@ class MiningService(GenericService):
         
         # Check if worker is authorized to submit shares
         ip = self.connection_ref()._get_ip()
-        if not Interfaces.worker_manager.authorize(worker_name, session['authorized'].get(worker_name)):
+        authorized = yield Interfaces.worker_manager.authorize(worker_name, session['authorized'].get(worker_name))
+        if not authorized:
             log.info("Worker is not authorized: IP %s", str(ip))
             raise SubmitException("Worker is not authorized")
 
@@ -212,7 +215,7 @@ class MiningService(GenericService):
             Interfaces.share_manager.on_submit_share(worker_name, block_header,
                                                      block_hash, difficulty, submit_time, True, ip, '', share_diff)
 
-        return True
+        defer.returnValue(True)
             
     # Service documentation for remote discovery
     update_block.help_text = "Notify Stratum server about new block on the network."

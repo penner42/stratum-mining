@@ -2,10 +2,13 @@ import time
 import hashlib
 import lib.settings as settings
 import lib.logger
+from twisted.enterprise import adbapi
+from twisted.internet import defer
+
 log = lib.logger.get_logger('DB_Mysql')
 
 import MySQLdb
-                
+
 class DB_Mysql():
     def __init__(self):
         log.debug("Connecting to DB")
@@ -22,37 +25,36 @@ class DB_Mysql():
         self.connect()
         
     def connect(self):
-        self.dbh = MySQLdb.connect(
-            getattr(settings, 'DB_MYSQL_HOST'), 
+        self.dbpool = adbapi.ConnectionPool(
+            "MySQLdb",
+            getattr(settings, 'DB_MYSQL_HOST'),
             getattr(settings, 'DB_MYSQL_USER'),
-            getattr(settings, 'DB_MYSQL_PASS'), 
+            getattr(settings, 'DB_MYSQL_PASS'),
             getattr(settings, 'DB_MYSQL_DBNAME'),
             getattr(settings, 'DB_MYSQL_PORT')
         )
-        self.dbc = self.dbh.cursor()
-        self.dbh.autocommit(True)
-            
-    def execute(self, query, args=None):
-        try:
-            self.dbc.execute(query, args)
-        except MySQLdb.OperationalError:
-            log.debug("MySQL connection lost during execute, attempting reconnect")
-            self.connect()
-            self.dbc = self.dbh.cursor()
-            
-            self.dbc.execute(query, args)
-            
+
+    @defer.inlineCallbacks
+    def fetchone_nb(self, query, args=None):
+        resp = yield self.dbpool.runQuery(query, args)
+        if len(resp) > 0:
+            defer.returnValue(resp[0])
+        else:
+            defer.returnValue(None)
+
+    def fetchall_nb(self, query, args=None):
+        return self.dbpool.runQuery(query, args)
+
+    def execute_nb(self, query, args=None):
+        return self.dbpool.runOperation(query, args)
+
+    def _executemany(self, txn, query, args):
+        txn.executemany(query, args)
+        return None
+
     def executemany(self, query, args=None):
-        try:
-            self.dbc.executemany(query, args)
-        except MySQLdb.OperationalError as e:
-            log.debug("MySQL connection lost during executemany, attempting reconnect")
-            log.debug("Exception: %s" % str(e))
-            self.connect()
-            self.dbc = self.dbh.cursor()
-            
-            self.dbc.executemany(query, args)
-    
+        return self.dbpool.runInteraction(self._executemany, query, args)
+
     def import_shares(self, data):
         # Data layout
         # 0: worker_name, 
@@ -72,40 +74,19 @@ class DB_Mysql():
         checkin_times = {}
         total_shares = 0
         best_diff = 0
-        
-        for k, v in enumerate(data):
-            # for database compatibility we are converting our_worker to Y/N format
-            if v[5]:
-                v[5] = 'Y'
-            else:
-                v[5] = 'N'
 
-            # TODO add saving of coinname to other postgres, sqlite
-            self.execute(
-                """
+        # time, ip, worker_name, is_valid, invalid_reason, block_hash, difficulty
+        params = [(v[4], v[6], v[0], 'Y' if v[5] else 'N', v[9], v[2], v[3]) for k, v in enumerate(data)]
+        self.executemany("""
                 INSERT INTO `shares`
-                (time, rem_host, username, our_result, 
-                  upstream_result, reason, solution, difficulty, coin_name)
-                VALUES 
-                (FROM_UNIXTIME(%(time)s), %(host)s, 
-                  %(uname)s, 
-                  %(lres)s, 'N', %(reason)s, %(solution)s, %(difficulty)s, %(coinname)s)
+                (time, rem_host, username, our_result,
+                  upstream_result, reason, solution, difficulty)
+                VALUES
+                (FROM_UNIXTIME(%s), %s, %s, %s, 'N', %s, %s, %s)
                 """,
-                {
-                    "time": v[4], 
-                    "host": v[6], 
-                    "uname": v[0], 
-                    "lres": v[5], 
-                    "reason": v[9],
-                    "solution": v[2],
-                    "difficulty": v[3],
-                    "coinname": v[11]
-                }
-            )
+                         params)
 
-            self.dbh.commit()
-
-
+    @defer.inlineCallbacks
     def found_block(self, data):
         # for database compatibility we are converting our_worker to Y/N format
         if data[5]:
@@ -115,8 +96,7 @@ class DB_Mysql():
 
         # Check for the share in the database before updating it
         # Note: We can't use DUPLICATE KEY because solution is not a key
-
-        self.execute(
+        shareid = yield self.fetchone_nb(
             """
             Select `id` from `shares`
             WHERE `solution` = %(solution)s
@@ -127,11 +107,9 @@ class DB_Mysql():
             }
         )
 
-        shareid = self.dbc.fetchone()
-
         if shareid and shareid[0] > 0:
             # Note: difficulty = -1 here
-            self.execute(
+            self.execute_nb(
                 """
                 UPDATE `shares`
                 SET `upstream_result` = %(result)s,
@@ -146,11 +124,9 @@ class DB_Mysql():
                     "id": shareid[0]
                 }
             )
-            
-            self.dbh.commit()
         else:
             #TODO add is_block_solution to postgres, sqlite
-            self.execute(
+            self.execute_nb(
                 """
                 INSERT INTO `shares`
                 (time, rem_host, username, our_result, 
@@ -171,31 +147,28 @@ class DB_Mysql():
                 }
             )
 
-            self.dbh.commit()
+    # def list_users(self):
+    #     self.execute(
+    #         """
+    #         SELECT *
+    #         FROM `pool_worker`
+    #         WHERE `id`> 0
+    #         """
+    #     )
+    #
+    #     while True:
+    #         results = self.dbc.fetchmany()
+    #         if not results:
+    #             break
+    #
+    #         for result in results:
+    #             yield result
+                
 
-        
-    def list_users(self):
-        self.execute(
-            """
-            SELECT *
-            FROM `pool_worker`
-            WHERE `id`> 0
-            """
-        )
-        
-        while True:
-            results = self.dbc.fetchmany()
-            if not results:
-                break
-            
-            for result in results:
-                yield result
-                
-                
-    def get_user(self, id_or_username):
-        log.debug("Finding user with id or username of %s", id_or_username)
-        
-        self.execute(
+    def get_user_nb(self, id_or_username):
+        log.debug("Finding nb user with id or username of %s", id_or_username)
+
+        user = self.fetchone_nb(
             """
             SELECT *
             FROM `pool_worker`
@@ -207,27 +180,40 @@ class DB_Mysql():
                 "uname": id_or_username
             }
         )
-        
-        user = self.dbc.fetchone()
         return user
 
+    def get_user(self, id_or_username):
+        log.debug("Finding user with id or username of %s", id_or_username)
+
+        return self.fetchone_nb(
+            """
+            SELECT *
+            FROM `pool_worker`
+            WHERE `id` = %(id)s
+              OR `username` = %(uname)s
+            """,
+            {
+                "id": id_or_username if id_or_username.isdigit() else -1,
+                "uname": id_or_username
+            }
+        )
+
+    @defer.inlineCallbacks
     def get_uid(self, id_or_username):
         log.debug("Finding user id of %s", id_or_username)
         uname = id_or_username.split(".", 1)[0]
-        self.execute("SELECT `id` FROM `accounts` where username = %s", (uname))
-        row = self.dbc.fetchone()
+        row = yield self.fetchone_nb("SELECT `id` FROM `accounts` where username = %s", (uname))
 
         if row is None:
-            return False
+            defer.returnValue(False)
         else:
             uid = row[0]
-            return uid
+            defer.returnValue(uid)
 
     def insert_worker(self, account_id, username, password):
         log.debug("Adding new worker %s", username)
         query = "INSERT INTO pool_worker"
-        self.execute(query + '(account_id, username, password) VALUES (%s, %s, %s);', (account_id, username, password))
-        self.dbh.commit()
+        self.execute_nb(query + '(account_id, username, password) VALUES (%s, %s, %s);', (account_id, username, password))
         return str(username)
         
 
@@ -237,7 +223,7 @@ class DB_Mysql():
         
         log.debug("Deleting user with id or username of %s", id_or_username)
         
-        self.execute(
+        self.execute_nb(
             """
             UPDATE `shares`
             SET `username` = 0
@@ -249,7 +235,7 @@ class DB_Mysql():
             }
         )
         
-        self.execute(
+        self.execute_nb(
             """
             DELETE FROM `pool_worker`
             WHERE `id` = %(id)s
@@ -260,13 +246,11 @@ class DB_Mysql():
                 "uname": id_or_username
             }
         )
-        
-        self.dbh.commit()
 
     def insert_user(self, username, password):
         log.debug("Adding new user %s", username)
         
-        self.execute(
+        self.execute_nb(
             """
             INSERT INTO `pool_worker`
             (`username`, `password`)
@@ -278,15 +262,12 @@ class DB_Mysql():
                 "pass": password
             }
         )
-        
-        self.dbh.commit()
-        
         return str(username)
 
     def update_user(self, id_or_username, password):
         log.debug("Updating password for user %s", id_or_username);
         
-        self.execute(
+        self.execute_nb(
             """
             UPDATE `pool_worker`
             SET `password` = %(pass)s
@@ -299,13 +280,12 @@ class DB_Mysql():
                 "pass": password
             }
         )
-        
-        self.dbh.commit()
 
+    @defer.inlineCallbacks
     def check_password(self, username, password):
         log.debug("Checking username/password for %s", username)
         
-        self.execute(
+        data = yield self.fetchone_nb(
             """
             SELECT COUNT(*) 
             FROM `pool_worker`
@@ -318,14 +298,14 @@ class DB_Mysql():
             }
         )
         
-        data = self.dbc.fetchone()
         if data[0] > 0:
-            return True
+            defer.returnValue(True)
         
-        return False
+        defer.returnValue(False)
 
+    @defer.inlineCallbacks
     def get_workers_stats(self):
-        self.execute(
+        result = yield self.fetchall_nb(
             """
             SELECT `username`, `speed`, `last_checkin`, `total_shares`,
               `total_rejects`, `total_found`, `alive`
@@ -336,7 +316,7 @@ class DB_Mysql():
         
         ret = {}
         
-        for data in self.dbc.fetchall():
+        for data in result:
             ret[data[0]] = {
                 "username": data[0],
                 "speed": int(data[1]),
@@ -347,22 +327,16 @@ class DB_Mysql():
                 "alive": True if data[6] is 1 else False,
             }
             
-        return ret
-
-    def insert_worker(self, account_id, username, password):
-        log.debug("Adding new worker %s", username)
-        query = "INSERT INTO pool_worker"
-        self.execute(query + '(account_id, username, password) VALUES (%s, %s, %s);', (account_id, username, password))
-        self.dbh.commit()
-        return str(username)
+        defer.returnValue(ret)
 
     def close(self):
-        self.dbh.close()
+        self.dbpool.close()
 
+    @defer.inlineCallbacks
     def check_tables(self):
         log.debug("Checking Database")
         
-        self.execute(
+        data = yield self.fetchone_nb(
             """
             SELECT COUNT(*)
             FROM INFORMATION_SCHEMA.STATISTICS
@@ -373,10 +347,6 @@ class DB_Mysql():
                 "schema": getattr(settings, 'DB_MYSQL_DBNAME')
             }
         )
-        
-        data = self.dbc.fetchone()
-        
-        if data[0] <= 0:
-           raise Exception("There is no shares table. Have you imported the schema?")
- 
 
+        if data[0] <= 0:
+            raise Exception("There is no shares table. Have you imported the schema?")

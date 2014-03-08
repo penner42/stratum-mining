@@ -1,10 +1,8 @@
 import time
-import hashlib
-import lib.settings as settings
 import lib.logger
-log = lib.logger.get_logger('DB_Mysql_Multicoin')
+log = lib.logger.get_logger('DB_Mysql_Multicoin_Vardiff')
+from twisted.internet import defer
 
-import MySQLdb
 import DB_Mysql
                 
 class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
@@ -30,38 +28,19 @@ class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
         checkin_times = {}
         total_shares = 0
         best_diff = 0
-        
-        for k, v in enumerate(data):
-            # for database compatibility we are converting our_worker to Y/N format
-            if v[5]:
-                v[5] = 'Y'
-            else:
-                v[5] = 'N'
 
-            self.execute(
-                """
+        # time, ip, worker_name, is_valid, invalid_reason, block_hash, difficulty, coin_name
+        params = [(v[4], v[6], v[0], 'Y' if v[5] else 'N', v[9], v[2], v[3], v[11]) for k, v in enumerate(data)]
+        return self.executemany("""
                 INSERT INTO `shares`
-                (time, rem_host, username, our_result, 
+                (time, rem_host, username, our_result,
                   upstream_result, reason, solution, difficulty, coin_name)
-                VALUES 
-                (FROM_UNIXTIME(%(time)s), %(host)s, 
-                  %(uname)s, 
-                  %(lres)s, 'N', %(reason)s, %(solution)s, %(difficulty)s, %(coinname)s)
+                VALUES
+                (FROM_UNIXTIME(%s), %s, %s, %s, 'N', %s, %s, %s, %s)
                 """,
-                {
-                    "time": v[4], 
-                    "host": v[6], 
-                    "uname": v[0], 
-                    "lres": v[5], 
-                    "reason": v[9],
-                    "solution": v[2],
-                    "difficulty": v[3],
-                    "coinname": v[11]
-                }
-            )
+                         params)
 
-            self.dbh.commit()
-    
+    @defer.inlineCallbacks
     def found_block(self, data):
         # Data layout
         # 0: worker_name,
@@ -77,6 +56,9 @@ class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
         # 10: coin_name
         #
         # for database compatibility we are converting our_worker to Y/N format
+        log.debug("############ IN found_block #############")
+        # import share queue
+
         if data[5]:
             data[5] = 'Y'
         else:
@@ -84,8 +66,7 @@ class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
 
         # Check for the share in the database before updating it
         # Note: We can't use DUPLICATE KEY because solution is not a key
-
-        self.execute(
+        shareid = yield self.fetchone_nb(
             """
             Select `id` from `shares`
             WHERE `solution` = %(solution)s
@@ -96,11 +77,9 @@ class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
             }
         )
 
-        shareid = self.dbc.fetchone()
-
-        if shareid and shareid[0] > 0:
+        if shareid is not None and shareid[0] > 0:
             # Note: difficulty = -1 here
-            self.execute(
+            self.execute_nb(
                 """
                 UPDATE `shares`
                 SET `upstream_result` = %(result)s, `is_block_solution` = 'Y'
@@ -114,10 +93,8 @@ class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
                     "id": shareid[0]
                 }
             )
-            
-            self.dbh.commit()
         else:
-            self.execute(
+            self.execute_nb(
                 """
                 INSERT INTO `shares`
                 (time, rem_host, username, our_result, 
@@ -137,13 +114,12 @@ class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
                     "coinname": data[10]
                 }
             )
-            self.dbh.commit()
-
+        log.debug("############ end found_block #############")
 
     def update_worker_diff(self, username, diff):
         log.debug("Setting difficulty for %s to %s", username, diff)
         
-        self.execute(
+        self.execute_nb(
             """
             UPDATE `pool_worker`
             SET `difficulty` = %(diff)s
@@ -154,24 +130,20 @@ class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
                 "diff": diff
             }
         )
-        
-        self.dbh.commit()
-    
+
     def clear_worker_diff(self):
         log.debug("Resetting difficulty for all workers")
         
-        self.execute(
+        self.execute_nb(
             """
             UPDATE `pool_worker`
             SET `difficulty` = 0
             """
         )
-        
-        self.dbh.commit()
 
-
+    @defer.inlineCallbacks
     def get_workers_stats(self):
-        self.execute(
+        result = yield self.fetchall_nb(
             """
             SELECT `username`, `speed`, `last_checkin`, `total_shares`,
               `total_rejects`, `total_found`, `alive`, `difficulty`
@@ -182,7 +154,7 @@ class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
         
         ret = {}
         
-        for data in self.dbc.fetchall():
+        for data in result:
             ret[data[0]] = {
                 "username": data[0],
                 "speed": int(data[1]),
@@ -194,6 +166,6 @@ class DB_Mysql_Vardiff_Multicoin(DB_Mysql.DB_Mysql):
                 "difficulty": float(data[7])
             }
             
-        return ret
+        defer.returnValue(ret)
 
 

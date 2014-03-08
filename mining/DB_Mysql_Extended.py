@@ -3,6 +3,7 @@ import hashlib
 import lib.settings as settings
 import lib.logger
 log = lib.logger.get_logger('DB_Mysql')
+from twisted.internet import defer
 
 import MySQLdb
 import DB_Mysql
@@ -14,17 +15,18 @@ class DB_Mysql_Extended(DB_Mysql.DB_Mysql):
     def updateStats(self, averageOverTime):
         log.debug("Updating Stats")
         # Note: we are using transactions... so we can set the speed = 0 and it doesn't take affect until we are commited.
-        self.execute(
+        # TODO breaking transaction here with conversion to non-blocking
+        self.execute_nb(
             """
             UPDATE `pool_worker`
             SET `speed` = 0, 
               `alive` = 0
             """
-        );
+        )
         
-        stime = '%.0f' % (time.time() - averageOverTime);
+        stime = '%.0f' % (time.time() - averageOverTime)
         
-        self.execute(
+        self.execute_nb(
             """
             UPDATE `pool_worker` pw
             LEFT JOIN (
@@ -44,7 +46,7 @@ class DB_Mysql_Extended(DB_Mysql.DB_Mysql):
             }
         )
             
-        self.execute(
+        self.execute_nb(
             """
             UPDATE `pool`
             SET `value` = (
@@ -55,12 +57,11 @@ class DB_Mysql_Extended(DB_Mysql.DB_Mysql):
             WHERE `parameter` = 'pool_speed'
             """
         )
-        
-        self.dbh.commit()
-    
+
+    @defer.inlineCallbacks
     def archive_check(self):
         # Check for found shares to archive
-        self.execute(
+        data = yield self.fetchone_nb(
             """
             SELECT `time`
             FROM `shares` 
@@ -69,16 +70,14 @@ class DB_Mysql_Extended(DB_Mysql.DB_Mysql):
             LIMIT 1
             """
         )
-        
-        data = self.dbc.fetchone()
-        
+
         if data is None or (data[0] + getattr(settings, 'ARCHIVE_DELAY')) > time.time():
-            return False
+            defer.returnValue(False)
         
-        return data[0]
+        defer.returnValue(data[0])
 
     def archive_found(self, found_time):
-        self.execute(
+        self.execute_nb(
             """
             INSERT INTO `shares_archive_found`
             SELECT s.`id`, s.`time`, s.`rem_host`, pw.`id`, s.`our_result`, 
@@ -94,11 +93,9 @@ class DB_Mysql_Extended(DB_Mysql.DB_Mysql):
                 "time": found_time
             }
         )
-        
-        self.dbh.commit()
 
     def archive_to_db(self, found_time):
-        self.execute(
+        self.execute_nb(
             """
             INSERT INTO `shares_archive`
             SELECT s.`id`, s.`time`, s.`rem_host`, pw.`id`, s.`our_result`, 
@@ -113,11 +110,9 @@ class DB_Mysql_Extended(DB_Mysql.DB_Mysql):
                 "time": found_time
             }
         )
-        
-        self.dbh.commit()
 
     def archive_cleanup(self, found_time):
-        self.execute(
+        self.execute_nb(
             """
             DELETE FROM `shares` 
             WHERE `time` <= FROM_UNIXTIME(%(time)s)
@@ -126,11 +121,10 @@ class DB_Mysql_Extended(DB_Mysql.DB_Mysql):
                 "time": found_time
             }
         )
-        
-        self.dbh.commit()
 
+    @defer.inlineCallbacks
     def archive_get_shares(self, found_time):
-        self.execute(
+        result = yield self.fetchall_nb(
             """
             SELECT *
             FROM `shares` 
@@ -141,8 +135,9 @@ class DB_Mysql_Extended(DB_Mysql.DB_Mysql):
             }
         )
         
-        return self.dbc
+        defer.returnValue(result)
 
+    @defer.inlineCallbacks
     def import_shares(self, data):
         # Data layout
         # 0: worker_name, 
@@ -185,7 +180,7 @@ class DB_Mysql_Extended(DB_Mysql.DB_Mysql):
             if v[10] > best_diff:
                 best_diff = v[10]
             # TODO add saving of coinname to other postgres, sqlite
-            self.execute(
+            self.execute_nb(
                 """
                 INSERT INTO `shares` 
                 (time, rem_host, worker, our_result, upstream_result, 
@@ -211,7 +206,7 @@ class DB_Mysql_Extended(DB_Mysql.DB_Mysql):
                 }
             )
 
-        self.execute(
+        result = yield self.fetchall_nb(
             """
             SELECT `parameter`, `value` 
             FROM `pool` 
@@ -224,7 +219,7 @@ class DB_Mysql_Extended(DB_Mysql.DB_Mysql):
             
         current_parameters = {}
         
-        for data in self.dbc.fetchall():
+        for data in result:
             current_parameters[data[0]] = data[1]
         
         round_best_share = int(current_parameters['round_best_share'])
@@ -258,7 +253,7 @@ class DB_Mysql_Extended(DB_Mysql.DB_Mysql):
         )
     
         for k, v in checkin_times.items():
-            self.execute(
+            self.execute_nb(
                 """
                 UPDATE `pool_worker`
                 SET `last_checkin` = FROM_UNIXTIME(%(time)s), 
@@ -273,10 +268,8 @@ class DB_Mysql_Extended(DB_Mysql.DB_Mysql):
                     "uname": k
                 }
             )
-        
-        self.dbh.commit()
 
-
+    @defer.inlineCallbacks
     def found_block(self, data):
         # for database compatibility we are converting our_worker to Y/N format
         #if data[5]:
@@ -284,7 +277,7 @@ class DB_Mysql_Extended(DB_Mysql.DB_Mysql):
         #else:
         #    data[5] = 'N'
         # Note: difficulty = -1 here
-        self.execute(
+        self.execute_nb(
             """
             UPDATE `shares`
             SET `upstream_result` = %(result)s,
@@ -304,7 +297,7 @@ class DB_Mysql_Extended(DB_Mysql.DB_Mysql):
         )
         
         if data[5] == True:
-            self.execute(
+            self.execute_nb(
                 """
                 UPDATE `pool_worker`
                 SET `total_found` = `total_found` + 1
@@ -314,14 +307,14 @@ class DB_Mysql_Extended(DB_Mysql.DB_Mysql):
                     "uname": data[0]
                 }
             )
-            self.execute(
+            f = yield self.fetchone_nb(
                 """
                 SELECT `value`
                 FROM `pool`
                 WHERE `parameter` = 'pool_total_found'
                 """
             )
-            total_found = int(self.dbc.fetchone()[0]) + 1
+            total_found = int(f[0]) + 1
             
             self.executemany(
                 """
@@ -353,8 +346,6 @@ class DB_Mysql_Extended(DB_Mysql.DB_Mysql):
                 ]
             )
             
-        self.dbh.commit()
-        
     def update_pool_info(self, pi):
         self.executemany(
             """
@@ -385,11 +376,10 @@ class DB_Mysql_Extended(DB_Mysql.DB_Mysql):
                 }
             ]
         )
-        
-        self.dbh.commit()
 
+    @defer.inlineCallbacks
     def get_pool_stats(self):
-        self.execute(
+        result = yield self.fetchall_nb(
             """
             SELECT * FROM `pool`
             """
@@ -397,13 +387,14 @@ class DB_Mysql_Extended(DB_Mysql.DB_Mysql):
         
         ret = {}
         
-        for data in self.dbc.fetchall():
+        for data in result:
             ret[data[0]] = data[1]
             
-        return ret
+        defer.returnValue(ret)
 
+    @defer.inlineCallbacks
     def get_workers_stats(self):
-        self.execute(
+        result = yield self.fetchall_nb(
             """
             SELECT `username`, `speed`, `last_checkin`, `total_shares`,
               `total_rejects`, `total_found`, `alive`, `difficulty`
@@ -414,7 +405,7 @@ class DB_Mysql_Extended(DB_Mysql.DB_Mysql):
         
         ret = {}
         
-        for data in self.dbc.fetchall():
+        for data in result:
             ret[data[0]] = {
                 "username": data[0],
                 "speed": int(data[1]),
@@ -426,4 +417,4 @@ class DB_Mysql_Extended(DB_Mysql.DB_Mysql):
                 "difficulty": int(data[7])
             }
             
-        return ret
+        defer.returnValue(ret)

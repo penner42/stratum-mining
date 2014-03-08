@@ -79,7 +79,7 @@ class DBInterface():
 
     def scheduleImport(self):
         # This schedule's the Import
-        if settings.DATABASE_DRIVER == "sqlite":
+        if settings.DATABASE_DRIVER == "sqlite" or settings.DATABASE_DRIVER == "mysql":
             use_thread = False
         else:
             use_thread = True
@@ -108,7 +108,6 @@ class DBInterface():
         # Here we are in the thread.
         dbi = self.connectDB()        
         self.do_import(dbi, False)
-        
         dbi.close()
 
     def _update_pool_info(self, data):
@@ -161,51 +160,67 @@ class DBInterface():
         except Exception as e:
             log.error("Update Found Block Share Record Failed: %s", e.args[0])
 
+    @defer.inlineCallbacks
     def check_password(self, username, password):
         if username == "":
             log.info("Rejected worker for blank username")
-            return False
+            defer.returnValue(False)
         allowed_chars = Set('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-.')
         if Set(username).issubset(allowed_chars) != True:
             log.info("Username contains bad arguments")
-            return False
+            defer.returnValue(False)
         if username.count('.') > 1:
             log.info("Username contains multiple . ")
-            return False
+            defer.returnValue(False)
         
         # Force username and password to be strings
         username = str(username)
         password = str(password)
-        if not settings.USERS_CHECK_PASSWORD and self.user_exists(username): 
-            return True
+        if not settings.USERS_CHECK_PASSWORD and (yield self.user_exists(username)):
+            defer.returnValue(True)
         elif self.cache.get(username) == password:
-            return True
-        elif self.dbi.check_password(username, password):
+            defer.returnValue(True)
+        elif (yield defer.maybeDeferred(self.dbi.check_password, username, password)):
             self.cache.set(username, password)
-            return True
+            defer.returnValue(True)
         elif settings.USERS_AUTOADD == True:
-            if self.dbi.get_uid(username) != False:
-                uid = self.dbi.get_uid(username)
+            uid = yield defer.maybeDeferred(self.dbi.get_uid, username)
+            if uid != False:
                 self.dbi.insert_worker(uid, username, password)
                 self.cache.set(username, password)
-                return True
+                defer.returnValue(True)
         
         log.info("Authentication for %s failed" % username)
-        return False
+        defer.returnValue(False)
     
-    def list_users(self):
-        return self.dbi.list_users()
-    
+    # def list_users(self):
+    #     return self.dbi.list_users()
+
+    @defer.inlineCallbacks
+    def get_user_nb(self, id):
+        if self.cache.get(id) is None:
+            user = yield defer.maybeDeferred(self.dbi.get_user_nb, id)
+            self.cache.set(id, user)
+        user = self.cache.get(id)
+        log.debug("BLAHBLAH %s" % str(user))
+        defer.returnValue(user)
+
+    @defer.inlineCallbacks
     def get_user(self, id):
         if self.cache.get(id) is None:
-            self.cache.set(id,self.dbi.get_user(id))
-        return self.cache.get(id)
+            log.debug("%s not in cache" % id)
+            user = yield defer.maybeDeferred(self.dbi.get_user, id)
+            ret = self.cache.set(id, user)
+            log.debug("cache set return: %s" % ret)
+        defer.returnValue(self.cache.get(id))
 
+    @defer.inlineCallbacks
     def user_exists(self, username):
+        log.debug("user_exists looking for %s" % username)
         if self.cache.get(username) is not None:
-            return True
-        user = self.get_user(username)
-        return user is not None 
+            defer.returnValue(True)
+        user = yield self.get_user(username)
+        defer.returnValue(user is not None)
 
     def insert_user(self, username, password):        
         return self.dbi.insert_user(username, password)

@@ -3,6 +3,8 @@ import hashlib
 import lib.settings as settings
 import lib.logger
 log = lib.logger.get_logger('DB_Mysql_Multicoin')
+from twisted.enterprise import adbapi
+from twisted.internet import defer
 
 import MySQLdb
                 
@@ -31,7 +33,22 @@ class DB_Mysql_Multicoin():
         )
         self.dbc = self.dbh.cursor()
         self.dbh.autocommit(True)
-            
+
+        self.dbpool = adbapi.ConnectionPool(
+            "MySQLdb",
+            getattr(settings, 'DB_MYSQL_HOST'),
+            getattr(settings, 'DB_MYSQL_USER'),
+            getattr(settings, 'DB_MYSQL_PASS'),
+            getattr(settings, 'DB_MYSQL_DBNAME'),
+            getattr(settings, 'DB_MYSQL_PORT')
+        )
+
+    @defer.inlineCallbacks
+    def fetchone_nb(self, query, args=None):
+        log.debug("ASDFASDFASDF")
+        resp = yield self.dbpool.runQuery(query, args)
+        defer.returnValue(resp[0])
+
     def execute(self, query, args=None):
         try:
             self.dbc.execute(query, args)
@@ -115,7 +132,7 @@ class DB_Mysql_Multicoin():
         # Check for the share in the database before updating it
         # Note: We can't use DUPLICATE KEY because solution is not a key
 
-        self.execute(
+        shareid = yield self.fetchone_nb(
             """
             Select `id` from `shares`
             WHERE `solution` = %(solution)s
@@ -125,8 +142,6 @@ class DB_Mysql_Multicoin():
                 "solution": data[2]
             }
         )
-
-        shareid = self.dbc.fetchone()
 
         if shareid and shareid[0] > 0:
             # Note: difficulty = -1 here
@@ -190,9 +205,28 @@ class DB_Mysql_Multicoin():
                 yield result
                 
                 
+    @defer.inlineCallbacks
+    def get_user_nb(self, id_or_username):
+        log.debug("Finding user with id or username of %s", id_or_username)
+
+        user = self.fetchone_nb(
+            """
+            SELECT *
+            FROM `pool_worker`
+            WHERE `id` = %(id)s
+              OR `username` = %(uname)s
+            """,
+            {
+                "id": id_or_username if id_or_username.isdigit() else -1,
+                "uname": id_or_username
+            }
+        )
+
+        defer.returnValue(user)
+
     def get_user(self, id_or_username):
         log.debug("Finding user with id or username of %s", id_or_username)
-        
+
         self.execute(
             """
             SELECT *
@@ -205,7 +239,7 @@ class DB_Mysql_Multicoin():
                 "uname": id_or_username
             }
         )
-        
+
         user = self.dbc.fetchone()
         return user
 
