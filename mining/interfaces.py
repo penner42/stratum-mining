@@ -124,6 +124,7 @@ class Interfaces(object):
     share_limiter = None
     timestamper = None
     template_registry = None
+    block_updater = None
 
     @classmethod
     def set_worker_manager(cls, manager):
@@ -147,9 +148,16 @@ class Interfaces(object):
         cls.template_registry = registry
 
     @classmethod
+    def set_block_updater(cls, block_updater):
+        cls.block_updater = block_updater
+
+    @classmethod
     @defer.inlineCallbacks
     def changeCoin(cls, host, port, user, password, address, powpos, txcomments):
 
+        # stop the old blockupdater
+        cls.block_updater.stop()
+        del cls.block_updater
 
         settings.COINDAEMON_TRUSTED_HOST = str(host)
         settings.COINDAEMON_TRUSTED_PORT = str(port)
@@ -161,10 +169,9 @@ class Interfaces(object):
         # TODO add coin name option so username doesn't have to be the same as coin name
         settings.COINDAEMON_NAME = str(user)
 
-
         log.info("CHANGING COIN # "+str(user)+" txcomments: "+settings.COINDAEMON_TX)
         
-        ''' Function to add a litecoind instance live '''
+        ''' Function to change a litecoind instance live '''
         from lib.coinbaser import SimpleCoinbaser
         from lib.template_registry import TemplateRegistry
         from lib.block_template import BlockTemplate
@@ -172,14 +179,21 @@ class Interfaces(object):
         from subscription import MiningSubscription
         
         #(host, port, user, password) = args
-        cls.template_registry.bitcoin_rpc.change_connection(str(host), port, str(user), str(password))
+        bitcoin_rpc = BitcoinRPCManager()
 
+        result = (yield bitcoin_rpc.check_submitblock())
+        if result == True:
+            log.info("Found submitblock")
+        elif result == False:
+            log.info("Did not find submitblock")
+        else:
+            log.info("unknown submitblock result")
 
-        result = (yield cls.template_registry.bitcoin_rpc.getblocktemplate())
+        result = (yield bitcoin_rpc.getblocktemplate())
         if isinstance(result, dict):
             # litecoind implements version 1 of getblocktemplate
             if result['version'] >= 1:
-                result = (yield cls.template_registry.bitcoin_rpc.getdifficulty())
+                result = (yield bitcoin_rpc.getdifficulty())
                 if isinstance(result,dict):
                     if 'proof-of-stake' in result:
                         settings.COINDAEMON_Reward = 'POS'
@@ -190,23 +204,24 @@ class Interfaces(object):
             else:
                     log.error("Block Version mismatch: %s" % result['version'])
 
-        cls.template_registry.coinbaser.change(address)
-        (yield cls.template_registry.coinbaser.on_load)
-        
-        cls.template_registry.update(BlockTemplate,
-                                            cls.template_registry.coinbaser,
-                                            cls.template_registry.bitcoin_rpc,
-                                            31,
-                                            MiningSubscription.on_template,
-                                            cls.share_manager.on_network_block)
-        
-        result = (yield cls.template_registry.bitcoin_rpc.check_submitblock())
-        if result == True:
-            log.info("Found submitblock")
-        elif result == False:
-            log.info("Did not find submitblock")
-        else:
-            log.info("unknown submitblock result")
+        coinbaser = SimpleCoinbaser(bitcoin_rpc, getattr(settings, 'CENTRAL_WALLET'))
+        (yield coinbaser.on_load)
+
+        registry = TemplateRegistry(BlockTemplate,
+                                    coinbaser,
+                                    bitcoin_rpc,
+                                    getattr(settings, 'INSTANCE_ID'),
+                                    MiningSubscription.on_template,
+                                    Interfaces.share_manager.on_network_block)
+
+        # Template registry is the main interface between Stratum service
+        # and pool core logic
+        Interfaces.set_template_registry(registry)
+
+        # Set up polling mechanism for detecting new block on the network
+        # This is just failsafe solution when -blocknotify
+        # mechanism is not working properly
+        Interfaces.set_block_updater(BlockUpdater(registry, bitcoin_rpc))
 
         log.info("New litecoind connection changed %s:%s" % (host, port))
 

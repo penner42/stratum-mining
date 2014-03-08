@@ -43,7 +43,6 @@ class TemplateRegistry(object):
     def __init__(self, block_template_class, coinbaser, bitcoin_rpc, instance_id,
                  on_template_callback, on_block_callback):
         self.prevhashes = {}
-        self.new_coin = False
         self.jobs = weakref.WeakValueDictionary()
         
         self.extranonce_counter = ExtranonceCounter(instance_id)
@@ -65,7 +64,6 @@ class TemplateRegistry(object):
 
     def update(self, block_template_class, coinbaser, bitcoin_rpc, instance_id,
                on_template_callback, on_block_callback):
-        self.new_coin = True
         self.prevhashes = {}
         self.jobs = weakref.WeakValueDictionary()
 
@@ -105,11 +103,10 @@ class TemplateRegistry(object):
         
         prevhash = block.prevhash_hex
 
-        if prevhash in self.prevhashes.keys() and self.new_coin is False:
+        if prevhash in self.prevhashes.keys():
             new_block = False
         else:
             new_block = True
-            self.new_coin = False
             self.prevhashes[prevhash] = []
                
         # Blocks sorted by prevhash, so it's easy to drop
