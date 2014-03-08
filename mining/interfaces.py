@@ -155,6 +155,8 @@ class Interfaces(object):
     @defer.inlineCallbacks
     def changeCoin(cls, host, port, user, password, address, powpos, txcomments):
 
+        log.info("CHANGING COIN # "+str(user)+" txcomments: "+settings.COINDAEMON_TX)
+
         # stop the old blockupdater
         cls.block_updater.stop()
         del cls.block_updater
@@ -169,8 +171,7 @@ class Interfaces(object):
         # TODO add coin name option so username doesn't have to be the same as coin name
         settings.COINDAEMON_NAME = str(user)
 
-        log.info("CHANGING COIN # "+str(user)+" txcomments: "+settings.COINDAEMON_TX)
-        
+
         ''' Function to change a litecoind instance live '''
         from lib.coinbaser import SimpleCoinbaser
         from lib.template_registry import TemplateRegistry
