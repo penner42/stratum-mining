@@ -173,7 +173,6 @@ class Interfaces(object):
         # TODO add coin name option so username doesn't have to be the same as coin name
         settings.COINDAEMON_NAME = str(user)
 
-
         ''' Function to change a litecoind instance live '''
         from lib.coinbaser import SimpleCoinbaser
         from lib.template_registry import TemplateRegistry
