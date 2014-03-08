@@ -226,5 +226,8 @@ class Interfaces(object):
         # mechanism is not working properly
         Interfaces.set_block_updater(BlockUpdater(registry, bitcoin_rpc))
 
+        # force rebroadcast
+        MiningSubscription.on_template(True)
+
         log.info("New litecoind connection changed %s:%s" % (host, port))
 
