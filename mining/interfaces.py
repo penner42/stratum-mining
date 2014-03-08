@@ -155,6 +155,12 @@ class Interfaces(object):
     @defer.inlineCallbacks
     def changeCoin(cls, host, port, user, password, address, powpos, txcomments):
 
+        settings.COINDAEMON_TRUSTED_HOST = str(host)
+        settings.COINDAEMON_TRUSTED_PORT = str(port)
+        settings.COINDAEMON_TRUSTED_USER = str(user)
+        settings.COINDAEMON_TRUSTED_PASSWORD = str(password)
+        settings.CENTRAL_WALLET = str(address)
+        settings.COINDAEMON_TX = 'yes' if txcomments else 'no'
         log.info("CHANGING COIN # "+str(user)+" txcomments: "+settings.COINDAEMON_TX)
 
         # stop the old blockupdater
@@ -163,13 +169,6 @@ class Interfaces(object):
             del cls.block_updater
 
         log.debug("deleted block updater")
-
-        settings.COINDAEMON_TRUSTED_HOST = str(host)
-        settings.COINDAEMON_TRUSTED_PORT = str(port)
-        settings.COINDAEMON_TRUSTED_USER = str(user)
-        settings.COINDAEMON_TRUSTED_PASSWORD = str(password)
-        settings.CENTRAL_WALLET = str(address)
-        settings.COINDAEMON_TX = 'yes' if txcomments else 'no'
 
         # TODO add coin name option so username doesn't have to be the same as coin name
         settings.COINDAEMON_NAME = str(user)
