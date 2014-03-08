@@ -158,8 +158,11 @@ class Interfaces(object):
         log.info("CHANGING COIN # "+str(user)+" txcomments: "+settings.COINDAEMON_TX)
 
         # stop the old blockupdater
-        cls.block_updater.stop()
-        del cls.block_updater
+        if cls.block_updater is not None:
+            cls.block_updater.stop()
+            del cls.block_updater
+
+        log.debug("deleted block updater")
 
         settings.COINDAEMON_TRUSTED_HOST = str(host)
         settings.COINDAEMON_TRUSTED_PORT = str(port)
@@ -175,6 +178,7 @@ class Interfaces(object):
         ''' Function to change a litecoind instance live '''
         from lib.coinbaser import SimpleCoinbaser
         from lib.template_registry import TemplateRegistry
+        from lib.bitcoin_rpc_manager import BitcoinRPCManager
         from lib.block_template import BlockTemplate
         from lib.block_updater import BlockUpdater
         from subscription import MiningSubscription
