@@ -169,8 +169,6 @@ class Interfaces(object):
             del cls.block_updater
 
         log.debug("deleted block updater")
-        Interfaces.set_template_registry(None)
-        defer.returnValue(True)
 
         # TODO add coin name option so username doesn't have to be the same as coin name
         settings.COINDAEMON_NAME = str(user)
