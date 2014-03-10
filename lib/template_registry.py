@@ -146,7 +146,7 @@ class TemplateRegistry(object):
         
         if self.update_in_progress:
             # Block has been already detected
-            return
+            return defer.succeed(None)
 
         self.update_in_progress = True
         self.last_update = Interfaces.timestamper.time()
