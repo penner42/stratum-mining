@@ -9,8 +9,8 @@ log = lib.logger.get_logger('coinbaser')
 # TODO: Add on_* hooks in the app
     
 class SimpleCoinbaser(object):
-    '''This very simple coinbaser uses constant bitcoin address
-    for all generated blocks.'''
+    """This very simple coinbaser uses constant bitcoin address
+    for all generated blocks."""
     
     def __init__(self, bitcoin_rpc, address):
         log.debug("Got to coinbaser")
@@ -71,7 +71,6 @@ class SimpleCoinbaser(object):
     
     def get_script_pubkey(self):
         if settings.COINDAEMON_Reward == 'POW':
-            self._validate()
             return util.script_to_address(self.address)
         else:
             return util.script_to_pubkey(self.pubkey)
