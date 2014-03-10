@@ -146,6 +146,7 @@ class TemplateRegistry(object):
         
         if self.update_in_progress:
             # Block has been already detected
+            log.info("in update_block more than once; returning")
             return defer.succeed(None)
 
         self.update_in_progress = True
