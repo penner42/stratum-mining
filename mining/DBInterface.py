@@ -202,7 +202,6 @@ class DBInterface():
             user = yield defer.maybeDeferred(self.dbi.get_user_nb, id)
             self.cache.set(id, user)
         user = self.cache.get(id)
-        log.debug("BLAHBLAH %s" % str(user))
         defer.returnValue(user)
 
     @defer.inlineCallbacks
@@ -211,12 +210,10 @@ class DBInterface():
             log.debug("%s not in cache" % id)
             user = yield defer.maybeDeferred(self.dbi.get_user, id)
             ret = self.cache.set(id, user)
-            log.debug("cache set return: %s" % ret)
         defer.returnValue(self.cache.get(id))
 
     @defer.inlineCallbacks
     def user_exists(self, username):
-        log.debug("user_exists looking for %s" % username)
         if self.cache.get(username) is not None:
             defer.returnValue(True)
         user = yield self.get_user(username)

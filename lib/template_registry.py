@@ -95,7 +95,7 @@ class TemplateRegistry(object):
     def get_last_broadcast_args(self):
         '''Returns arguments for mining.notify
         from last known template.'''
-        log.debug("Getting Laat Template")
+        log.debug("Getting Last Template")
         return self.last_block.broadcast_args
         
     def add_template(self, block,block_height):
@@ -105,11 +105,10 @@ class TemplateRegistry(object):
         
         prevhash = block.prevhash_hex
 
-        if prevhash in self.prevhashes.keys() and self.new_coin is False:
+        if prevhash in self.prevhashes.keys():
             new_block = False
         else:
             new_block = True
-            self.new_coin = False
             self.prevhashes[prevhash] = []
                
         # Blocks sorted by prevhash, so it's easy to drop
@@ -166,7 +165,7 @@ class TemplateRegistry(object):
                 
         template = self.block_template_class(Interfaces.timestamper, self.coinbaser, JobIdGenerator.get_new_id())
         log.info(template.fill_from_rpc(data))
-        self.add_template(template,data['height'])
+        self.add_template(template, data['height'])
 
         log.info("Update finished, %.03f sec, %d txes" % \
                     (Interfaces.timestamper.time() - start, len(template.vtx)))
