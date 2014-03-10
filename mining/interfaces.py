@@ -190,7 +190,7 @@ class Interfaces(object):
             else:
                     log.error("Block Version mismatch: %s" % result['version'])
 
-        cls.template_registry.coinbaser.change(address)
+        cls.template_registry.coinbaser.change(cls.template_registry.bitcoin_rpc, address)
         (yield cls.template_registry.coinbaser.on_load)
         
         cls.template_registry.update(BlockTemplate,

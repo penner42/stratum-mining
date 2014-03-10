@@ -79,9 +79,14 @@ class SimpleCoinbaser(object):
     def get_coinbase_data(self):
         return ''
 
-    def change(self, address):
+    def change(self, bitcoin_rpc, address):
+        self.address = address
+
+        self.on_load = defer.Deferred()
+
         self.address = address
         self.is_valid = False
-        self._validate()
 
+        self.bitcoin_rpc = bitcoin_rpc
+        self._validate()
 
