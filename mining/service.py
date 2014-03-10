@@ -46,12 +46,19 @@ class MiningService(GenericService):
         return '%s' % serialized
 
     @admin
-    def update_block(self):
-        '''Connect this RPC call to 'litecoind -blocknotify' for 
+    def update_block(self, *args):
+        """Connect this RPC call to 'litecoind -blocknotify' for
         instant notification about new block on the network.
-        See blocknotify.sh in /scripts/ for more info.'''
-        
-        log.info("New block notification received")
+        See blocknotify.sh in /scripts/ for more info."""
+        try:
+            blockcoin = args[0]
+        except IndexError as e:
+            blockcoin = None
+
+        if blockcoin:
+            log.info("New block notification received for %s" % blockcoin)
+        else:
+            log.info("New block notification received with no coinname")
         Interfaces.template_registry.update_block()
         return True 
 
