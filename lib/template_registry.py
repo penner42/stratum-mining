@@ -141,8 +141,8 @@ class TemplateRegistry(object):
         #reactor.callLater(10, self.on_block_callback, new_block) 
               
     def update_block(self):
-        '''Registry calls the getblocktemplate() RPC
-        and build new block template.'''
+        """Registry calls the getblocktemplate() RPC
+        and build new block template."""
         
         if self.update_in_progress:
             # Block has been already detected
