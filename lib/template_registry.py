@@ -190,7 +190,7 @@ class TemplateRegistry(object):
         try:
             j = self.jobs[job_id]
         except:
-            log.info("Job id '%s' not found" % job_id)
+            log.debug("Job id '%s' not found" % job_id)
             return None
         
         # Now we have to check if job is still valid.
