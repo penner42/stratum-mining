@@ -60,6 +60,7 @@ class MiningService(GenericService):
         else:
             log.info("New block notification received with no coinname")
 
+        Interfaces.template_registry.update_block()
         return True
 
     @admin
