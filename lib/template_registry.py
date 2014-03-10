@@ -155,6 +155,7 @@ class TemplateRegistry(object):
         d = self.bitcoin_rpc.getblocktemplate()
         d.addCallback(self._update_block)
         d.addErrback(self._update_block_failed)
+        return d
         
     def _update_block_failed(self, failure):
         log.error(str(failure))
@@ -171,7 +172,7 @@ class TemplateRegistry(object):
                     (Interfaces.timestamper.time() - start, len(template.vtx)))
         
         self.update_in_progress = False        
-        return data
+        return True
     
     def diff_to_target(self, difficulty):
         '''Converts difficulty to target'''

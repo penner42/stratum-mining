@@ -59,8 +59,9 @@ class MiningService(GenericService):
             log.info("New block notification received for %s" % blockcoin)
         else:
             log.info("New block notification received with no coinname")
-        Interfaces.template_registry.update_block()
-        return True 
+
+        # don't return until this is done
+        return Interfaces.template_registry.update_block()
 
     @admin
     def add_litecoind(self, *args):
