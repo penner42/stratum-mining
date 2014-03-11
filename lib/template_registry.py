@@ -175,7 +175,7 @@ class TemplateRegistry(object):
         return True
     
     def diff_to_target(self, difficulty):
-        '''Converts difficulty to target'''
+        """Converts difficulty to target"""
         if settings.COINDAEMON_ALGO == 'scrypt' or 'scrypt-jane':
             diff1 = 0x0000ffff00000000000000000000000000000000000000000000000000000000
         elif settings.COINDAEMON_ALGO == 'quark':
@@ -186,7 +186,7 @@ class TemplateRegistry(object):
         return diff1 / difficulty
     
     def get_job(self, job_id):
-        '''For given job_id returns BlockTemplate instance or None'''
+        """For given job_id returns BlockTemplate instance or None"""
         try:
             j = self.jobs[job_id]
         except:
