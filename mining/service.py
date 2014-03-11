@@ -24,6 +24,10 @@ class MiningService(GenericService):
     event = 'mining.notify'
 
     @admin
+    def rebroadcast(self):
+        MiningSubscription.on_template(false)
+
+    @admin
     def get_server_stats(self):
         serialized = '' 
         for subscription in Pubsub.iterate_subscribers(self.event):
