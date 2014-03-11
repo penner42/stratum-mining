@@ -194,6 +194,8 @@ class Interfaces(object):
         cls.template_registry.coinbaser.change(cls.template_registry.bitcoin_rpc, address)
         (yield cls.template_registry.coinbaser.on_load)
         
+        # must set update_in_progress to false before updating registry, or block won't update
+        cls.template_registry.update_in_progress = False
         cls.template_registry.update(BlockTemplate,
                                             cls.template_registry.coinbaser,
                                             cls.template_registry.bitcoin_rpc,
@@ -210,5 +212,5 @@ class Interfaces(object):
             log.info("unknown submitblock result")
 
         log.info("New litecoind connection changed %s:%s" % (host, port))
-        cls.template_registry.update_in_progress = False
+
         defer.returnValue(True)
