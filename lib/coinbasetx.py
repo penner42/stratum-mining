@@ -40,7 +40,7 @@ class CoinbaseTransactionPOW(halfnode.CTransaction):
         tx_out.scriptPubKey = coinbaser.get_script_pubkey()
 
         if settings.COINDAEMON_TX == 'yes':
-            self.strTxComment = "http://github.com/SSOC/stratum-mining"
+            self.strTxComment = "http://github.com/penner42/stratum-mining"
         self.vin.append(tx_in)
         self.vout.append(tx_out)
         
@@ -87,8 +87,8 @@ class CoinbaseTransactionPOS(halfnode.CTransaction):
         tx_out.scriptPubKey = coinbaser.get_script_pubkey()
        
         self.nTime = ntime 
-        if settings.COINDAEMON_SHA256_TX == 'yes':
-            self.strTxComment = "http://github.com/SSOC/stratum-mining"
+        if settings.COINDAEMON_TX == 'yes':
+            self.strTxComment = "http://github.com/penner42/stratum-mining"
         self.vin.append(tx_in)
         self.vout.append(tx_out)
         
