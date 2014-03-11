@@ -119,7 +119,7 @@ def setup(on_startup):
     # Set up polling mechanism for detecting new block on the network
     # This is just failsafe solution when -blocknotify
     # mechanism is not working properly    
-    BlockUpdater(registry, bitcoin_rpc)
+    BlockUpdater()
 
     prune_thr = threading.Thread(target=WorkLogPruner, args=(Interfaces.worker_manager.job_log,))
     prune_thr.daemon = True
