@@ -211,3 +211,4 @@ class Interfaces(object):
 
         log.info("New litecoind connection changed %s:%s" % (host, port))
         cls.template_registry.update_in_progress = False
+        defer.returnValue(True)

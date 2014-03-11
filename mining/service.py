@@ -84,7 +84,7 @@ class MiningService(GenericService):
 
         d = Interfaces.template_registry.wait_for_update()
         d.addCallback(Interfaces.changeCoin, args[0], args[1], args[2], args[3], args[4], args[5], args[6])
-        return True
+        return d
 
     @admin
     def refresh_config(self):
