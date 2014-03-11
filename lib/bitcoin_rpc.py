@@ -121,7 +121,7 @@ class BitcoinRPC(object):
             # make sure the block was created. 
             defer.returnValue((yield self.blockexists(hash_hex, scrypt_hex)))
         else:
-            defer.returnValue((False, None))
+            defer.returnValue((False, hash_hex))
 
     @defer.inlineCallbacks
     def getinfo(self):
