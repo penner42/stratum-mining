@@ -200,8 +200,8 @@ class Interfaces(object):
         (yield coinbaser.on_load)
 
         cls.template_registry.update(BlockTemplate,
-                                     cls.template_registry.coinbaser,
-                                     cls.template_registry.bitcoin_rpc,
+                                     coinbaser,
+                                     bitcoin_rpc,
                                      31,
                                      MiningSubscription.on_template,
                                      cls.share_manager.on_network_block)
