@@ -17,18 +17,12 @@ class DBInterface():
 
     def init_main(self):
         self.dbi.check_tables()
- 
         self.q = Queue.Queue()
         self.queueclock = None
-
         self.cache = Cache.Cache()
-
         self.nextStatsUpdate = 0
-
         self.scheduleImport()
-        
         self.next_force_import_time = time.time() + settings.DB_LOADER_FORCE_TIME
-    
         signal.signal(signal.SIGINT, self.signal_handler)
 
     def signal_handler(self, signal, frame):
@@ -52,10 +46,6 @@ class DBInterface():
         log.debug("DBInterface.run_import called")
         self.do_import(self.dbi, False)
         self.scheduleImport()
-
-    def _update_pool_info(self, data):
-        self.dbi.update_pool_info({ 'blocks' : data['blocks'], 'balance' : data['balance'],
-            'connections' : data['connections'], 'difficulty' : data['difficulty'] })
 
     def do_import(self, dbi, force):
         log.debug("DBInterface.do_import called. force: %s, queue size: %s", 'yes' if force == True else 'no', self.q.qsize())
@@ -165,22 +155,9 @@ class DBInterface():
     def insert_user(self, username, password):        
         return self.dbi.insert_user(username, password)
 
-    def delete_user(self, username):
-        self.mc.delete(username)
-        self.usercache = {}
-        return self.dbi.delete_user(username)
-        
-    def update_user(self, username, password):
-        self.mc.delete(username)
-        self.mc.set(username, password)
-        return self.dbi.update_user(username, password)
-
     def update_worker_diff(self, username, diff):
         return self.dbi.update_worker_diff(username, diff)
 
-    def get_pool_stats(self):
-        return self.dbi.get_pool_stats()
-    
     def get_workers_stats(self):
         return self.dbi.get_workers_stats()
 
