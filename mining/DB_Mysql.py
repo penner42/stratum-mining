@@ -57,16 +57,16 @@ class DB_Mysql():
 
     def import_shares(self, data):
         # Data layout
-        # 0: worker_name, 
-        # 1: block_header, 
-        # 2: block_hash, 
-        # 3: difficulty, 
-        # 4: timestamp, 
-        # 5: is_valid, 
-        # 6: ip, 
-        # 7: self.block_height, 
+        # 0: worker_name,
+        # 1: block_header,
+        # 2: block_hash,
+        # 3: difficulty,
+        # 4: timestamp,
+        # 5: is_valid,
+        # 6: ip,
+        # 7: self.block_height,
         # 8: self.prev_hash,
-        # 9: invalid_reason, 
+        # 9: invalid_reason,
         # 10: share_diff
         # 11: coin_name
 
@@ -75,20 +75,36 @@ class DB_Mysql():
         total_shares = 0
         best_diff = 0
 
-        # time, ip, worker_name, is_valid, invalid_reason, block_hash, difficulty
-        params = [(v[4], v[6], v[0], 'Y' if v[5] else 'N', v[9], v[2], v[3]) for k, v in enumerate(data)]
-        self.executemany("""
+        # time, ip, worker_name, is_valid, invalid_reason, block_hash, difficulty, coin_name
+        params = [(v[4], v[6], v[0], 'Y' if v[5] else 'N', v[9], v[2], v[3], v[11]) for k, v in enumerate(data)]
+        return self.executemany("""
                 INSERT INTO `shares`
                 (time, rem_host, username, our_result,
-                  upstream_result, reason, solution, difficulty)
+                  upstream_result, reason, solution, difficulty, coin_name)
                 VALUES
-                (FROM_UNIXTIME(%s), %s, %s, %s, 'N', %s, %s, %s)
+                (FROM_UNIXTIME(%s), %s, %s, %s, 'N', %s, %s, %s, %s)
                 """,
                          params)
 
     @defer.inlineCallbacks
     def found_block(self, data):
+        # Data layout
+        # 0: worker_name,
+        # 1: block_header,
+        # 2: block_hash,
+        # 3: difficulty,
+        # 4: timestamp,
+        # 5: is_valid,
+        # 6: ip,
+        # 7: self.block_height,
+        # 8: self.prev_hash,
+        # 9: share_diff
+        # 10: coin_name
+        #
         # for database compatibility we are converting our_worker to Y/N format
+        log.debug("############ IN found_block #############")
+        # import share queue
+
         if data[5]:
             data[5] = 'Y'
         else:
@@ -107,34 +123,32 @@ class DB_Mysql():
             }
         )
 
-        if shareid and shareid[0] > 0:
+        if shareid is not None and shareid[0] > 0:
             # Note: difficulty = -1 here
             self.execute_nb(
                 """
                 UPDATE `shares`
-                SET `upstream_result` = %(result)s,
-                `is_block_solution` = 'Y'
+                SET `upstream_result` = %(result)s, `is_block_solution` = 'Y'
                 WHERE `solution` = %(solution)s
                 AND `id` = %(id)s
                 LIMIT 1
                 """,
                 {
-                    "result": data[5], 
+                    "result": data[5],
                     "solution": data[2],
                     "id": shareid[0]
                 }
             )
         else:
-            #TODO add is_block_solution to postgres, sqlite
             self.execute_nb(
                 """
                 INSERT INTO `shares`
-                (time, rem_host, username, our_result, 
-                  upstream_result, reason, solution. is_block_solution)
-                VALUES 
-                (FROM_UNIXTIME(%(time)s), %(host)s, 
-                  %(uname)s, 
-                  %(lres)s, %(result)s, %(reason)s, %(solution)s), 'Y'
+                (time, rem_host, username, our_result,
+                  upstream_result, solution, is_block_solution, coin_name)
+                VALUES
+                (FROM_UNIXTIME(%(time)s), %(host)s,
+                  %(uname)s,
+                  %(lres)s, %(result)s, %(solution)s, 'Y', %(coinname)s)
                 """,
                 {
                     "time": data[4],
@@ -142,28 +156,12 @@ class DB_Mysql():
                     "uname": data[0],
                     "lres": data[5],
                     "result": data[5],
-                    "reason": data[9],
-                    "solution": data[2]
+                    "solution": data[2],
+                    "coinname": data[10]
                 }
             )
+        log.debug("############ end found_block #############")
 
-    # def list_users(self):
-    #     self.execute(
-    #         """
-    #         SELECT *
-    #         FROM `pool_worker`
-    #         WHERE `id`> 0
-    #         """
-    #     )
-    #
-    #     while True:
-    #         results = self.dbc.fetchmany()
-    #         if not results:
-    #             break
-    #
-    #         for result in results:
-    #             yield result
-                
 
     def get_user_nb(self, id_or_username):
         log.debug("Finding nb user with id or username of %s", id_or_username)
@@ -303,19 +301,44 @@ class DB_Mysql():
         
         defer.returnValue(False)
 
+    def update_worker_diff(self, username, diff):
+        log.debug("Setting difficulty for %s to %s", username, diff)
+
+        self.execute_nb(
+            """
+            UPDATE `pool_worker`
+            SET `difficulty` = %(diff)s
+            WHERE `username` = %(uname)s
+            """,
+            {
+                "uname": username,
+                "diff": diff
+            }
+        )
+
+    def clear_worker_diff(self):
+        log.debug("Resetting difficulty for all workers")
+
+        self.execute_nb(
+            """
+            UPDATE `pool_worker`
+            SET `difficulty` = 0
+            """
+        )
+
     @defer.inlineCallbacks
     def get_workers_stats(self):
         result = yield self.fetchall_nb(
             """
             SELECT `username`, `speed`, `last_checkin`, `total_shares`,
-              `total_rejects`, `total_found`, `alive`
+              `total_rejects`, `total_found`, `alive`, `difficulty`
             FROM `pool_worker`
             WHERE `id` > 0
             """
         )
-        
+
         ret = {}
-        
+
         for data in result:
             ret[data[0]] = {
                 "username": data[0],
@@ -325,8 +348,9 @@ class DB_Mysql():
                 "total_rejects": int(data[4]),
                 "total_found": int(data[5]),
                 "alive": True if data[6] is 1 else False,
+                "difficulty": float(data[7])
             }
-            
+
         defer.returnValue(ret)
 
     def close(self):
