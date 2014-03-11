@@ -45,37 +45,13 @@ class DBInterface():
         return DB_Mysql.DB_Mysql()
 
     def scheduleImport(self):
-        # This schedule's the Import
-        if settings.DATABASE_DRIVER == "sqlite" or settings.DATABASE_DRIVER == "mysql":
-            use_thread = False
-        else:
-            use_thread = True
-        
-        if use_thread:
-            self.queueclock = reactor.callLater(settings.DB_LOADER_CHECKTIME , self.run_import_thread)
-        else:
-            self.queueclock = reactor.callLater(settings.DB_LOADER_CHECKTIME , self.run_import)
+        # This scheduless the import
+        self.queueclock = reactor.callLater(settings.DB_LOADER_CHECKTIME , self.run_import)
     
-    def run_import_thread(self):
-        log.debug("run_import_thread current size: %d", self.q.qsize())
-        
-        if self.q.qsize() >= settings.DB_LOADER_REC_MIN or time.time() >= self.next_force_import_time:  # Don't incur thread overhead if we're not going to run
-            reactor.callInThread(self.import_thread)
-                
-        self.scheduleImport()
-
     def run_import(self):
         log.debug("DBInterface.run_import called")
-        
         self.do_import(self.dbi, False)
-        
         self.scheduleImport()
-
-    def import_thread(self):
-        # Here we are in the thread.
-        dbi = self.connectDB()        
-        self.do_import(dbi, False)
-        dbi.close()
 
     def _update_pool_info(self, data):
         self.dbi.update_pool_info({ 'blocks' : data['blocks'], 'balance' : data['balance'],
