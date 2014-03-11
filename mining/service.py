@@ -25,7 +25,7 @@ class MiningService(GenericService):
 
     @admin
     def rebroadcast(self):
-        MiningSubscription.on_template(false)
+        MiningSubscription.on_template(False)
 
     @admin
     def get_server_stats(self):
