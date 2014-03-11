@@ -6,15 +6,14 @@ import lib.logger
 log = lib.logger.get_logger('subscription')
 
 class MiningSubscription(Subscription):
-    '''This subscription object implements
-    logic for broadcasting new jobs to the clients.'''
-    
+    """This subscription object implements
+    logic for broadcasting new jobs to the clients."""
     event = 'mining.notify'
     
     @classmethod
     def on_template(cls, is_new_block):
-        '''This is called when TemplateRegistry registers
-           new block which we have to broadcast clients.'''
+        """This is called when TemplateRegistry registers
+           new block which we have to broadcast clients."""
         
         start = Interfaces.timestamper.time()
         clean_jobs = is_new_block
@@ -32,9 +31,11 @@ class MiningSubscription(Subscription):
                         worker_name = session['authorized'].keys()[0]
                         difficulty = session['difficulty']
                         work_id = Interfaces.worker_manager.register_work(worker_name, job_id, difficulty)             
-                        subscription.emit_single(work_id, prevhash, coinb1, coinb2, merkle_branch, version, nbits, ntime, clean_jobs)
+                        subscription.emit_single(work_id, prevhash, coinb1, coinb2, merkle_branch, version,
+                                                 nbits, ntime, clean_jobs)
                     else:
-                        subscription.emit_single(job_id, prevhash, coinb1, coinb2, merkle_branch, version, nbits, ntime, clean_jobs)
+                        subscription.emit_single(job_id, prevhash, coinb1, coinb2, merkle_branch, version,
+                                                 nbits, ntime, clean_jobs)
             except Exception as e:
                 log.exception("Error broadcasting work to client %s" % str(e))
                 pass
@@ -43,7 +44,7 @@ class MiningSubscription(Subscription):
         log.info("BROADCASTED to %d connections in %.03f sec" % (cnt, (Interfaces.timestamper.time() - start)))
         
     def _finish_after_subscribe(self, result):
-        '''Send new job to newly subscribed client'''
+        """Send new job to newly subscribed client"""
         try:        
             (job_id, prevhash, coinb1, coinb2, merkle_branch, version, nbits, ntime, _) = \
                         Interfaces.template_registry.get_last_broadcast_args()
@@ -62,8 +63,8 @@ class MiningSubscription(Subscription):
         return result
                 
     def after_subscribe(self, *args):
-        '''This will send new job to the client *after* he receive subscription details.
+        """This will send new job to the client *after* he receive subscription details.
         on_finish callback solve the issue that job is broadcasted *during*
-        the subscription request and client receive messages in wrong order.'''
+        the subscription request and client receive messages in wrong order."""
         self.connection_ref().on_finish.addCallback(self._finish_after_subscribe)
 
