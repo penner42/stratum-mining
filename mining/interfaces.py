@@ -150,6 +150,7 @@ class Interfaces(object):
     @defer.inlineCallbacks
     def changeCoin(cls, host, port, user, password, address, powpos, txcomments):
 
+        cls.template_registry.update_in_progress = True
 
         settings.COINDAEMON_TRUSTED_HOST = str(host)
         settings.COINDAEMON_TRUSTED_PORT = str(port)
@@ -209,4 +210,4 @@ class Interfaces(object):
             log.info("unknown submitblock result")
 
         log.info("New litecoind connection changed %s:%s" % (host, port))
-
+        cls.template_registry.update_in_progress = False

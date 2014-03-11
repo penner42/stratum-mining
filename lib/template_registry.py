@@ -135,11 +135,14 @@ class TemplateRegistry(object):
 
         # Everything is ready, let's broadcast jobs!
         self.on_template_callback(new_block)
-        
 
-        #from twisted.internet import reactor
-        #reactor.callLater(10, self.on_block_callback, new_block) 
-              
+    def wait_for_update(self):
+        if self.update_in_progress:
+            log.info("change coin while update in progress, wait for finish")
+            return self.d
+        else:
+            return defer.succeed(True)
+
     def update_block(self):
         """Registry calls the getblocktemplate() RPC
         and build new block template."""
@@ -152,10 +155,10 @@ class TemplateRegistry(object):
         self.update_in_progress = True
         self.last_update = Interfaces.timestamper.time()
         
-        d = self.bitcoin_rpc.getblocktemplate()
-        d.addCallback(self._update_block)
-        d.addErrback(self._update_block_failed)
-        return d
+        self.d = self.bitcoin_rpc.getblocktemplate()
+        self.d.addCallback(self._update_block)
+        self.d.addErrback(self._update_block_failed)
+        return self.d
         
     def _update_block_failed(self, failure):
         log.error(str(failure))
