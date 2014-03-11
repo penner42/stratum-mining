@@ -22,9 +22,9 @@ class BitcoinRPCManager(object):
         log.debug("Got to Bitcoin RPC Manager")
         self.conns = {}
         self.conns[0] = BitcoinRPC(settings.COINDAEMON_TRUSTED_HOST,
-                                 settings.COINDAEMON_TRUSTED_PORT,
-                                 settings.COINDAEMON_TRUSTED_USER,
-                                 settings.COINDAEMON_TRUSTED_PASSWORD)
+                                   settings.COINDAEMON_TRUSTED_PORT,
+                                   settings.COINDAEMON_TRUSTED_USER,
+                                   settings.COINDAEMON_TRUSTED_PASSWORD)
         self.curr_conn = 0
         for x in range (1, 99):
             if hasattr(settings, 'COINDAEMON_TRUSTED_HOST_' + str(x)) and hasattr(settings, 'COINDAEMON_TRUSTED_PORT_' + str(x)) and hasattr(settings, 'COINDAEMON_TRUSTED_USER_' + str(x)) and hasattr(settings, 'COINDAEMON_TRUSTED_PASSWORD_' + str(x)):
@@ -45,7 +45,7 @@ class BitcoinRPCManager(object):
         if len(self.conns) <= 1:
             log.error("Problem with Pool 0 -- NO ALTERNATE POOLS!!!")
             time.sleep(4)
-	    self.curr_conn = 0
+        self.curr_conn = 0
             return
         log.error("Problem with Pool %i Switching to Next!" % (self.curr_conn) )
         self.curr_conn = self.curr_conn + 1

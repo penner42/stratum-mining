@@ -29,20 +29,12 @@ elif settings.COINDAEMON_ALGO == 'quark':
 else: 
     log.debug("########################################### Loading SHA256 Support ######################################################")
 
-#if settings.COINDAEMON_Reward == 'POS':
-#        log.debug("########################################### Loading POS Support #########################################################")
-#        pass
-#else:
-#        log.debug("########################################### Loading POW Support ######################################################")
-#        pass
-
 if settings.COINDAEMON_TX == 'yes':
     log.debug("########################################### Loading SHA256 Transaction Message Support #########################################################")
     pass
 else:
     log.debug("########################################### NOT Loading SHA256 Transaction Message Support ######################################################")
     pass
-
 
 MY_VERSION = 31402
 MY_SUBVERSION = ".4"
