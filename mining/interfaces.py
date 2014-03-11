@@ -162,25 +162,30 @@ class Interfaces(object):
         # TODO add coin name option so username doesn't have to be the same as coin name
         settings.COINDAEMON_NAME = str(user)
 
-
         log.info("CHANGING COIN # "+str(user)+" txcomments: "+settings.COINDAEMON_TX)
         
         ''' Function to add a litecoind instance live '''
         from lib.coinbaser import SimpleCoinbaser
-        from lib.template_registry import TemplateRegistry
+        from lib.bitcoin_rpc_manager import BitcoinRPCManager
         from lib.block_template import BlockTemplate
-        from lib.block_updater import BlockUpdater
         from subscription import MiningSubscription
         
         #(host, port, user, password) = args
-        cls.template_registry.bitcoin_rpc.change_connection(str(host), port, str(user), str(password))
+        bitcoin_rpc = BitcoinRPCManager()
 
+        result = (yield bitcoin_rpc.check_submitblock())
+        if result == True:
+            log.info("Found submitblock")
+        elif result == False:
+            log.info("Did not find submitblock")
+        else:
+            log.info("unknown submitblock result")
 
-        result = (yield cls.template_registry.bitcoin_rpc.getblocktemplate())
+        result = (yield bitcoin_rpc.getblocktemplate())
         if isinstance(result, dict):
             # litecoind implements version 1 of getblocktemplate
             if result['version'] >= 1:
-                result = (yield cls.template_registry.bitcoin_rpc.getdifficulty())
+                result = (yield bitcoin_rpc.getdifficulty())
                 if isinstance(result,dict):
                     if 'proof-of-stake' in result:
                         settings.COINDAEMON_Reward = 'POS'
@@ -191,26 +196,16 @@ class Interfaces(object):
             else:
                     log.error("Block Version mismatch: %s" % result['version'])
 
-        cls.template_registry.coinbaser.change(cls.template_registry.bitcoin_rpc, address)
-        (yield cls.template_registry.coinbaser.on_load)
-        
-        # must set update_in_progress to false before updating registry, or block won't update
-        cls.template_registry.update_in_progress = False
-        cls.template_registry.update(BlockTemplate,
-                                            cls.template_registry.coinbaser,
-                                            cls.template_registry.bitcoin_rpc,
-                                            31,
-                                            MiningSubscription.on_template,
-                                            cls.share_manager.on_network_block)
-        
-        result = (yield cls.template_registry.bitcoin_rpc.check_submitblock())
-        if result == True:
-            log.info("Found submitblock")
-        elif result == False:
-            log.info("Did not find submitblock")
-        else:
-            log.info("unknown submitblock result")
+        coinbaser = SimpleCoinbaser(bitcoin_rpc, getattr(settings, 'CENTRAL_WALLET'))
+        (yield coinbaser.on_load)
 
+        cls.template_registry.update(BlockTemplate,
+                                     cls.template_registry.coinbaser,
+                                     cls.template_registry.bitcoin_rpc,
+                                     31,
+                                     MiningSubscription.on_template,
+                                     cls.share_manager.on_network_block)
+        
         log.info("New litecoind connection changed %s:%s" % (host, port))
 
         defer.returnValue(True)
