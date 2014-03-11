@@ -148,7 +148,7 @@ class Interfaces(object):
 
     @classmethod
     @defer.inlineCallbacks
-    def changeCoin(cls, host, port, user, password, address, powpos, txcomments):
+    def changeCoin(cls, host, port, user, password, address, powpos, txcomments, res):
 
         cls.template_registry.update_in_progress = True
 
