@@ -31,7 +31,7 @@ class MiningSubscription(Subscription):
                         worker_name = session['authorized'].keys()[0]
                         difficulty = session['difficulty']
                         work_id = Interfaces.worker_manager.register_work(worker_name, job_id, difficulty)
-                        log.debug("emitting for block %s " % prevhash)
+                        log.debug("emitting for work id %s job id %s block %s " % (work_id, job_id, prevhash))
                         subscription.emit_single(work_id, prevhash, coinb1, coinb2, merkle_branch, version,
                                                  nbits, ntime, clean_jobs)
                     else:

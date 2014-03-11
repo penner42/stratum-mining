@@ -98,10 +98,10 @@ class TemplateRegistry(object):
         log.debug("Getting Last Template")
         return self.last_block.broadcast_args
         
-    def add_template(self, block,block_height):
-        '''Adds new template to the registry.
+    def add_template(self, block, block_height):
+        """Adds new template to the registry.
         It also clean up templates which should
-        not be used anymore.'''
+        not be used anymore."""
         
         prevhash = block.prevhash_hex
 
