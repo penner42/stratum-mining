@@ -45,7 +45,7 @@ class DBInterface():
         return DB_Mysql.DB_Mysql()
 
     def scheduleImport(self):
-        # This scheduless the import
+        # this schedules the import
         self.queueclock = reactor.callLater(settings.DB_LOADER_CHECKTIME , self.run_import)
     
     def run_import(self):
