@@ -83,7 +83,7 @@ class MiningService(GenericService):
             raise SubmitException("Coin switching disabled in settings.")
 
         d = Interfaces.template_registry.wait_for_update()
-        d.addCallback(Interfaces.changeCoin(args[0], args[1], args[2], args[3], args[4], args[5], args[6]))
+        d.addCallback(Interfaces.changeCoin, args[0], args[1], args[2], args[3], args[4], args[5], args[6])
         return True
 
     @admin
