@@ -153,7 +153,7 @@ class Interfaces(object):
         cls.template_registry.update_in_progress = True
 
         settings.COINDAEMON_TRUSTED_HOST = str(host)
-        settings.COINDAEMON_TRUSTED_PORT = str(port)
+        settings.COINDAEMON_TRUSTED_PORT = port
         settings.COINDAEMON_TRUSTED_USER = str(user)
         settings.COINDAEMON_TRUSTED_PASSWORD = str(password)
         settings.CENTRAL_WALLET = str(address)
