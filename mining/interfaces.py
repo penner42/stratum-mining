@@ -77,14 +77,11 @@ class ShareManagerInterface(object):
         self.prev_hash = b58encode(int(prevhash, 16))
         pass
     
-    def on_submit_share(self, worker_name, block_header, block_hash, difficulty, timestamp, is_valid, ip, invalid_reason, share_diff):
+    def on_submit_share(self, worker_name, block_header, block_hash, difficulty, timestamp, is_valid, ip,
+                        invalid_reason, share_diff):
         #log.debug("%s (%s) %s %s" % (block_hash, share_diff, 'valid' if is_valid else 'INVALID', worker_name))
-        try:
-            share_data = [worker_name, block_header, block_hash, difficulty, timestamp, is_valid, ip, self.block_height, self.prev_hash,
-                invalid_reason, share_diff, settings.COINDAEMON_NAME]
-        except NameError as e:
-            share_data = [worker_name, block_header, block_hash, difficulty, timestamp, is_valid, ip, self.block_height, self.prev_hash,
-                invalid_reason, share_diff]
+        share_data = [worker_name, block_header, block_hash, difficulty, timestamp, is_valid, ip, self.block_height,
+                      self.prev_hash, invalid_reason, share_diff, settings.COINDAEMON_NAME]
         dbi.queue_share(share_data)
  
     def on_submit_block(self, on_submit, worker_name, block_header, block_hash, difficulty, submit_time, ip, share_diff):
@@ -97,10 +94,9 @@ class ShareManagerInterface(object):
                                                  True, ip, '', share_diff)
 
         log.info("Block %s %s" % (block_hash, 'ACCEPTED' if is_accepted else 'REJECTED'))
-        try:
-            block_data = [worker_name, block_header, block_hash, -1, submit_time, is_accepted, ip, self.block_height, self.prev_hash, share_diff, settings.COINDAEMON_NAME]
-        except NameError as e:
-            block_data = [worker_name, block_header, block_hash, -1, submit_time, is_accepted, ip, self.block_height, self.prev_hash, share_diff]
+        block_data = [worker_name, block_header, block_hash, -1, submit_time, is_accepted, ip, self.block_height,
+                      self.prev_hash, share_diff, settings.COINDAEMON_NAME]
+
         dbi.found_block(block_data)
         
 class TimestamperInterface(object):

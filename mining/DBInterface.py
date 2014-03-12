@@ -15,6 +15,7 @@ class DBInterface():
     def __init__(self):
         self.dbi = self.connectDB()
 
+    # TODO get rid of this, and put it in __init__?
     def init_main(self):
         self.dbi.check_tables()
         self.q = Queue.Queue()
@@ -23,6 +24,7 @@ class DBInterface():
         self.nextStatsUpdate = 0
         self.scheduleImport()
         self.next_force_import_time = time.time() + settings.DB_LOADER_FORCE_TIME
+        self.import_in_progress = False
         signal.signal(signal.SIGINT, self.signal_handler)
 
     def signal_handler(self, signal, frame):
@@ -47,31 +49,36 @@ class DBInterface():
         self.do_import(self.dbi, False)
         self.scheduleImport()
 
+    def wait_for_import(self):
+        if self.import_in_progress:
+            log.info("waiting for import to finish...")
+            return self.d
+        else:
+            return defer.succeed(True)
+
     def do_import(self, dbi, force):
-        log.debug("DBInterface.do_import called. force: %s, queue size: %s", 'yes' if force == True else 'no', self.q.qsize())
-        
-        # Flush the whole queue on force
-        forcesize = 0
-        if force == True:
-            forcesize = self.q.qsize()
+        log.debug("DBInterface.do_import called. force: %s, queue size: %s", 'yes' if force is True else 'no',
+                  self.q.qsize())
+
+        if self.import_in_progress:
+            # import already in progress; don't enter again
+            return
+
+        self.import_in_progress = True
+        self.d = defer.Deferred()
 
         # Only run if we have data
-        while self.q.empty() == False and (force == True or self.q.qsize() >= settings.DB_LOADER_REC_MIN or time.time() >= self.next_force_import_time or forcesize > 0):
-            self.next_force_import_time = time.time() + settings.DB_LOADER_FORCE_TIME
-            
-            force = False
+        while not self.q.empty():
             # Put together the data we want to import
             sqldata = []
             datacnt = 0
             
-            while self.q.empty() == False and datacnt < settings.DB_LOADER_REC_MAX:
+            while not self.q.empty() and datacnt < settings.DB_LOADER_REC_MAX:
                 datacnt += 1
                 data = self.q.get()
                 sqldata.append(data)
                 self.q.task_done()
 
-            forcesize -= datacnt
-                
             # try to do the import, if we fail, log the error and put the data back in the queue
             try:
                 log.info("Inserting %s Share Records", datacnt)
@@ -80,7 +87,9 @@ class DBInterface():
                 log.error("Insert Share Records Failed: %s", e.args[0])
                 for k, v in enumerate(sqldata):
                     self.q.put(v)
-                break  # Allows us to sleep a little
+
+        self.import_in_progress = False
+        self.d.callback(True)
 
     def queue_share(self, data):
         self.q.put(data)
@@ -88,8 +97,9 @@ class DBInterface():
     def found_block(self, data):
         try:
             log.info("Updating Found Block Share Record")
-            self.do_import(self.dbi, True)  # We can't Update if the record is not there.
-            self.dbi.found_block(data)
+            self.do_import(self.dbi, True)  # can't update if the record is not there.
+            d = self.wait_for_import()      # wait for import to finish before updating block
+            d.addCallback(self.dbi.found_block, data)
         except Exception as e:
             log.error("Update Found Block Share Record Failed: %s", e.args[0])
 
