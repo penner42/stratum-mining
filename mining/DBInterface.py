@@ -56,6 +56,7 @@ class DBInterface():
         else:
             return defer.succeed(True)
 
+    @defer.inlineCallbacks
     def do_import(self, dbi, force):
         log.debug("DBInterface.do_import called. force: %s, queue size: %s", 'yes' if force is True else 'no',
                   self.q.qsize())
@@ -82,7 +83,7 @@ class DBInterface():
             # try to do the import, if we fail, log the error and put the data back in the queue
             try:
                 log.info("Inserting %s Share Records", datacnt)
-                dbi.import_shares(sqldata)
+                res = yield dbi.import_shares(sqldata)
             except Exception as e:
                 log.error("Insert Share Records Failed: %s", e.args[0])
                 for k, v in enumerate(sqldata):
