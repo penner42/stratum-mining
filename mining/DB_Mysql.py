@@ -87,7 +87,7 @@ class DB_Mysql():
                                 values)
 
     @defer.inlineCallbacks
-    def found_block(self, data):
+    def found_block(self, res, data):
         # Data layout
         # 0: worker_name,
         # 1: block_header,
