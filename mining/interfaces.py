@@ -30,7 +30,6 @@ class WorkerManagerInterface(object):
     @defer.inlineCallbacks
     def get_user_difficulty(self, worker_name):
         wd = yield dbi.get_user_nb(worker_name)
-        log.debug("BLAHASDF %s" % str(wd))
         if len(wd) > 6:
             if wd[6] != 0:
                 defer.returnValue((True, wd[6]))
@@ -86,7 +85,7 @@ class ShareManagerInterface(object):
  
     def on_submit_block(self, on_submit, worker_name, block_header, block_hash, difficulty, submit_time, ip, share_diff):
         (is_accepted, valid_hash) = on_submit
-        if (settings.SOLUTION_BLOCK_HASH):
+        if settings.SOLUTION_BLOCK_HASH:
             block_hash = valid_hash
 
         #submit share
