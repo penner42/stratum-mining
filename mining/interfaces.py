@@ -176,10 +176,10 @@ class Interfaces(object):
         else:
             log.info("unknown submitblock result")
 
-        result = (yield bitcoin_rpc.getblocktemplate())
-        if isinstance(result, dict):
+        data = (yield bitcoin_rpc.getblocktemplate())
+        if isinstance(data, dict):
             # litecoind implements version 1 of getblocktemplate
-            if result['version'] >= 1:
+            if data['version'] >= 1:
                 result = (yield bitcoin_rpc.getdifficulty())
                 if isinstance(result,dict):
                     if 'proof-of-stake' in result:
@@ -199,7 +199,8 @@ class Interfaces(object):
                                      bitcoin_rpc,
                                      31,
                                      MiningSubscription.on_template,
-                                     cls.share_manager.on_network_block)
+                                     cls.share_manager.on_network_block,
+                                     data)
         
         log.info("New litecoind connection changed %s:%s" % (host, port))
 
